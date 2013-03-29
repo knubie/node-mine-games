@@ -1,0 +1,38 @@
+doctype html
+html
+  head
+    meta charset="utf-8"
+    meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"
+    title Mine Games
+    meta content="" name="description"
+    meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport"
+    link href="css/reset.css" rel="stylesheet"
+    link href="styles.css" rel="stylesheet"
+    script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"
+    script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"
+    script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"
+    script src="mustache.js"
+    script src="http://localhost:3000/socket.io/socket.io.js"
+    script src="main.js"
+    script id="home-template"
+      #new-game
+        | {{newGame}}
+    script id="match-template"
+      #match
+        p match id: {{id}}
+        p
+          | players: 
+          form#player
+            input.player-name type='text' placeholder='name' value='{{player}}'
+          | {{#players}}
+          p
+            | {{name}}
+          | {{/players}}
+          #logout logout
+        #cards
+          | Cards: 
+    script id="mine-template"
+      #mine
+        | Mine ({{mine.length}})
+  body
+    #container
