@@ -16,23 +16,25 @@ html
     script src="main.js"
     script id="home-template"
       #new-game
-        | {{newGame}}
-    script id="match-template"
-      #match
-        p match id: {{id}}
-        p
-          | players: 
-          form#player
-            input.player-name type='text' placeholder='name' value='{{player}}'
-          | {{#players}}
-          p
-            | {{name}}
-          | {{/players}}
-          #logout logout
-        #cards
-          | Cards: 
-    script id="mine-template"
-      #mine
-        | Mine ({{mine.length}})
+        | New Game
+    script id="game-template"
+      p Game ID: {{game._id}}
+      #mine.card
+        | Mine ({{game.mine.length}})
+      #hand
+        | {{#hand}}
+        | {{.}} 
+        | {{/hand}}
+      /p
+        /| players: 
+        /form#player
+          /input.player-name type='text' placeholder='name' value='{{player}}'
+        /| {{#players}}
+        /p
+          /| {{name}}
+        /| {{/players}}
+        /#logout logout
+      /#cards
+        /| Cards: 
   body
     #container

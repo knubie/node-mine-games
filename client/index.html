@@ -15,20 +15,12 @@
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="main.js"></script>
     <script id="home-template">
-      <div id="new-game">{{newGame}}</div>
+      <div id="new-game">New Game</div>
     </script>
-    <script id="match-template">
-      <div id="match">
-        <p>match id: {{id}}</p>
-        <p>players: <form id="player">
-            <input class="player-name" placeholder="name" type="text" value="{{player}}" />
-          </form>{{#players}}<p>{{name}}</p>{{/players}}<div id="logout">logout</div>
-        </p>
-        <div id="cards">Cards: </div>
-      </div>
-    </script>
-    <script id="mine-template">
-      <div id="mine">Mine ({{mine.length}})</div>
+    <script id="game-template">
+      <p>Game ID: {{game._id}}</p>
+      <div class="card" id="mine">Mine ({{game.mine.length}})</div>
+      <div id="hand">{{#hand}}{{.}} {{/hand}}</div>
     </script>
   </head>
   <body>

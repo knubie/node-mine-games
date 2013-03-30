@@ -8,9 +8,40 @@ server = require('http').createServer(app)
 io = require('socket.io').listen(server)
 
 io.sockets.on 'connection', (socket) ->
-  socket.emit 'news', {hello: 'world'}
-  socket.on 'my other event', (data) ->
-    console.log data
+  socket.on 'create game', (model, callback) ->
+    console.log 'Creating new Game.'
+    game = new Game
+      #players: model.players
+      players: []
+      mine: do ->
+        mine = []
+        mine.push('copper') for [1..20]
+        mine.push('silver') for [1..10]
+        mine.push('gold') for [1..5]
+        mine.push('goblin') for [1..5]
+        return _.shuffle(mine)
+
+    console.log 'made game.'
+    game.save (err) ->
+      if err then console.log err
+      console.log 'game saved.'
+      callback game
+
+  socket.on 'read game', (id, callback) ->
+    Game.findById id, (err, game) ->
+      if err then console.log err
+      callback game
+
+  socket.on 'draw mine', (id, callback) ->
+    console.log 'draw from mine'
+    Game.findById id, (err, game) ->
+      if err then console.log err
+      card = game.mine.pop()
+      game.save (err) ->
+        socket.broadcast.emit "game update #{id}", game
+        callback
+          mine: game.mine
+          card: card
 
 cors = (req, res, next) ->
   res.header("Access-Control-Allow-Origin", "*")

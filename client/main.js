@@ -4,19 +4,14 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   $(function() {
-    var Game, Games, Home, Match, Mine, Player, Players, Routes, SERVER_URL, app, socket;
+    var Routes, SERVER_URL, app, hand, models, socket, views;
     SERVER_URL = "http://localhost:3000";
+    models = {};
+    views = {};
+    app = {};
+    hand = [];
     socket = io.connect(SERVER_URL);
-    socket.on('news', function(data) {
-      console.log(data);
-      return socket.emit('my other event', {
-        my: 'data'
-      });
-    });
-    Backbone.sync = function(method, model, options) {
-      return socket.emit(method, model);
-    };
-    Game = (function(_super) {
+    models.Game = (function(_super) {
 
       __extends(Game, _super);
 
@@ -26,9 +21,8 @@
 
       Game.prototype.initialize = function() {
         var _this = this;
-        console.log("initializing new Game model");
-        return this.on('change', function() {
-          return console.log("game changed");
+        return socket.on("game update " + this.id, function(game) {
+          return _this.set(game);
         });
       };
 
@@ -37,26 +31,7 @@
       return Game;
 
     })(Backbone.Model);
-    Games = (function(_super) {
-
-      __extends(Games, _super);
-
-      function Games() {
-        return Games.__super__.constructor.apply(this, arguments);
-      }
-
-      Games.prototype.initialize = function() {
-        return console.log('initializing Games collection');
-      };
-
-      Games.prototype.model = Game;
-
-      Games.prototype.url = "" + SERVER_URL + "/game";
-
-      return Games;
-
-    })(Backbone.Collection);
-    Player = (function(_super) {
+    models.Player = (function(_super) {
 
       __extends(Player, _super);
 
@@ -66,9 +41,8 @@
 
       Player.prototype.initialize = function() {
         var _this = this;
-        console.log('initializing new Player model');
-        return this.on('change', function() {
-          return console.log('player changed');
+        return socket.on("player update " + this.id, function(player) {
+          return _this.set(player);
         });
       };
 
@@ -77,26 +51,7 @@
       return Player;
 
     })(Backbone.Model);
-    Players = (function(_super) {
-
-      __extends(Players, _super);
-
-      function Players() {
-        return Players.__super__.constructor.apply(this, arguments);
-      }
-
-      Players.prototype.initialize = function() {
-        return console.log('initializing Players collection');
-      };
-
-      Players.prototype.model = Player;
-
-      Players.prototype.url = "" + SERVER_URL + "/player";
-
-      return Players;
-
-    })(Backbone.Collection);
-    Home = (function(_super) {
+    views.Home = (function(_super) {
 
       __extends(Home, _super);
 
@@ -109,168 +64,68 @@
       Home.prototype.template = $('#home-template').html();
 
       Home.prototype.render = function() {
-        this.$el.html(Mustache.render(this.template, {
-          newGame: 'new game'
-        }));
+        this.$el.html(Mustache.render(this.template));
         $('#container').append(this.$el);
         return this;
       };
 
       Home.prototype.events = {
-        'click #new-game': 'newGame'
+        'click #new-game': 'createGame'
       };
 
-      Home.prototype.newGame = function() {
-        var _this = this;
-        app.game = new Game({
-          players: app.player.isNew() ? [] : [app.player.id]
-        });
-        console.log(app.game);
-        app.games.add(app.game);
-        return app.game.save({}, {
-          success: function() {
-            _this.remove();
-            return app.routes.navigate("games/" + app.game.id, {
-              trigger: true
-            });
-          }
+      Home.prototype.createGame = function() {
+        return socket.emit('create game', {}, function(model) {
+          app.game = new models.Game(model);
+          return app.routes.navigate("games/" + app.game.id, {
+            trigger: true
+          });
         });
       };
 
       return Home;
 
     })(Backbone.View);
-    Match = (function(_super) {
+    views.Game = (function(_super) {
 
-      __extends(Match, _super);
+      __extends(Game, _super);
 
-      function Match() {
-        return Match.__super__.constructor.apply(this, arguments);
+      function Game() {
+        return Game.__super__.constructor.apply(this, arguments);
       }
 
-      Match.prototype.initialize = function() {
-        var mine;
-        mine = new Mine({
-          model: this.model
+      Game.prototype.initialize = function() {
+        var _this = this;
+        return app.game.on('change', function() {
+          _this.render();
+          return console.log('game changed');
         });
-        return mine.render();
       };
 
-      Match.prototype.events = {
-        'submit #player': 'updatePlayer',
-        'click #logout': 'logout'
-      };
+      Game.prototype.id = 'game';
 
-      Match.prototype.id = 'match';
+      Game.prototype.template = $('#game-template').html();
 
-      Match.prototype.template = $('#match-template').html();
-
-      Match.prototype.render = function() {
-        var id;
+      Game.prototype.render = function() {
         this.$el.html(Mustache.render(this.template, {
-          player: app.player.get('name'),
-          players: (function() {
-            var _i, _len, _ref, _results;
-            _ref = app.game.get('players');
-            _results = [];
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              id = _ref[_i];
-              _results.push(app.players.get(id).attributes);
-            }
-            return _results;
-          })()
+          game: app.game.attributes,
+          hand: hand
         }));
         $('#container').append(this.$el);
         return this;
       };
 
-      Match.prototype.updatePlayer = function(e) {
-        var _this = this;
-        e.preventDefault();
-        return app.player.save({
-          name: $('.player-name').val()
-        }, {
-          success: function() {
-            sessionStorage.setItem('player', app.player.id);
-            if (app.game.get('players').indexOf(app.player.id) === -1) {
-              return app.game.save({
-                players: app.game.get('players').concat(app.player.id)
-              }, {
-                success: function() {
-                  return _this.render();
-                }
-              });
-            } else {
-              return _this.render();
-            }
-          }
-        });
-      };
-
-      Match.prototype.logout = function() {
-        var _this = this;
-        if (!app.player.isNew()) {
-          app.game.set('players', (function() {
-            var playerIndex, players;
-            players = app.game.get('players');
-            playerIndex = app.game.get('players').indexOf(app.player.id);
-            players.splice(playerIndex, 1);
-            return players;
-          })());
-          return app.game.save({}, {
-            success: function() {
-              app.player = new Player({
-                name: 'Anonymous'
-              });
-              sessionStorage.removeItem('player');
-              app.players.add(app.player);
-              return _this.render();
-            }
-          });
-        }
-      };
-
-      return Match;
-
-    })(Backbone.View);
-    Mine = (function(_super) {
-
-      __extends(Mine, _super);
-
-      function Mine() {
-        return Mine.__super__.constructor.apply(this, arguments);
-      }
-
-      Mine.prototype.initialize = function() {
-        return this.listenTo(this.model, 'change', this.render);
-      };
-
-      Mine.prototype.id = 'mine';
-
-      Mine.prototype.template = $('#mine-template').html();
-
-      Mine.prototype.render = function() {
-        this.$el.html(Mustache.render(this.template, {
-          mine: this.model.get('mine')
-        }));
-        $('#container').append(this.$el);
-        return this;
-      };
-
-      Mine.prototype.events = {
+      Game.prototype.events = {
         'click #mine': 'draw'
       };
 
-      Mine.prototype.draw = function() {
-        var _this = this;
-        return $.get("" + SERVER_URL + "/draw/" + this.model.id, function(res) {
-          console.log(res);
-          $('#cards').append("" + res + " ");
-          return _this.model.fetch();
+      Game.prototype.draw = function() {
+        return socket.emit('draw mine', app.game.id, function(result) {
+          hand.push(result.card);
+          return app.game.set('mine', result.mine);
         });
       };
 
-      return Mine;
+      return Game;
 
     })(Backbone.View);
     Routes = (function(_super) {
@@ -281,57 +136,37 @@
         return Routes.__super__.constructor.apply(this, arguments);
       }
 
-      Routes.prototype.initialize = function() {};
-
       Routes.prototype.routes = {
         '': 'home',
-        'games/:id': 'match'
+        'games/:id': 'readGame'
       };
 
       Routes.prototype.home = function() {
         if (app.view != null) {
           app.view.remove();
         }
-        app.view = new Home;
+        app.view = new views.Home;
         return app.view.render();
       };
 
-      Routes.prototype.match = function(id) {
-        if (app.view != null) {
-          app.view.remove();
+      Routes.prototype.readGame = function(id) {
+        if (app.game == null) {
+          return socket.emit('read game', id, function(model) {
+            app.game = new models.Game(model);
+            app.view = new views.Game;
+            return app.view.render();
+          });
+        } else {
+          app.view = new views.Game;
+          return app.view.render();
         }
-        app.game = app.games.get(id);
-        app.view = new Match({
-          model: app.game
-        });
-        return app.view.render();
       };
 
       return Routes;
 
     })(Backbone.Router);
-    app = {
-      games: new Games,
-      players: new Players
-    };
-    return app.games.fetch({
-      success: function() {
-        return app.players.fetch({
-          success: function() {
-            if (sessionStorage.getItem('player')) {
-              app.player = app.players.get(sessionStorage.getItem('player'));
-            } else {
-              app.player = new Player({
-                name: 'Anonymous'
-              });
-              app.players.add(app.player);
-            }
-            app.routes = new Routes;
-            return Backbone.history.start();
-          }
-        });
-      }
-    });
+    app.routes = new Routes;
+    return Backbone.history.start();
   });
 
 }).call(this);
