@@ -118,7 +118,25 @@
       return Routes;
 
     })(Backbone.Router);
-    return app = {};
+    app = {};
+    return app.games.fetch({
+      success: function() {
+        return app.players.fetch({
+          success: function() {
+            if (sessionStorage.getItem('player')) {
+              app.player = app.players.get(sessionStorage.getItem('player'));
+            } else {
+              app.player = new Player({
+                name: 'Anonymous'
+              });
+              app.players.add(app.player);
+            }
+            app.routes = new Routes;
+            return Backbone.history.start();
+          }
+        });
+      }
+    });
   });
 
 }).call(this);

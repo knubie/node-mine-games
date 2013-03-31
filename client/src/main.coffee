@@ -1,70 +1,87 @@
 $ ->
-  SERVER_URL = "http://localhost:3000"
-  models = {}
-  views = {}
-  app = {}
+  app =
+    url: "http://localhost:3000"
   hand = []
-  socket = io.connect(SERVER_URL)
+  socket = io.connect(app.url)
+
+  Backbone.sync = (method, model, options) ->
+    if method is 'create'
+      socket.emit "create #{model.name}", model, options.success
+
+    if method is 'read'
+      socket.emit "read #{model.name}", model.id, options.success
 
   # Models / Collections
   # ============================================
 
-  class models.Game extends Backbone.Model
-    initialize: ->
-      socket.on "game update #{@id}", (game) =>
-        @set game
-    idAttribute: "_id" # Assign mongodb's _id to the Backbone model.id
+  models =
+    
+    Game: class extends Backbone.Model
+      initialize: ->
+        socket.on @id, (game) =>
+          console.log 'got game broadcast'
+          console.log game
+          @set game
+      name: 'game'
 
-  class models.Player extends Backbone.Model
-    initialize: ->
-      socket.on "player update #{@id}", (player) =>
-        @set player
-    idAttribute: "_id"
+    Player: class extends Backbone.Model
+      initialize: ->
+        socket.on @id, (player) =>
+          console.log 'got player broadcast'
+          console.log player
+          @set player
+      name: 'player'
 
   # Views
   # ============================================
 
-  class views.Home extends Backbone.View
-    id: 'home'
-    template: $('#home-template').html()
+  views =
 
-    render: ->
-      @$el.html Mustache.render @template
-      $('#container').append @$el
-      return @
+    Home: class extends Backbone.View
+      id: 'home'
+      template: $('#home-template').html()
 
-    events:
-      'click #new-game': 'createGame'
+      render: ->
+        @$el.html Mustache.render @template
+        $('#container').append @$el
+        return @
 
-    createGame: ->
-      socket.emit 'create game', {}, (model) ->
-        app.game = new models.Game model
-        app.routes.navigate "games/#{app.game.id}",
-          trigger: true # Trigger the routes event for this path.
+      events:
+        'click #new-game': 'createGame'
 
-  class views.Game extends Backbone.View
-    initialize: ->
-      app.game.on 'change', =>
-        @render()
-        console.log 'game changed'
+      createGame: ->
+        app.game = new models.Game
+        app.game.save {},
+          success: ->
+            app.game.set 'id', app.game.get '_id'
+            console.log app.game
+            app.routes.navigate "games/#{app.game.id}",
+              trigger: true # Trigger the routes event for this path.
 
-    id: 'game'
-    template: $('#game-template').html()
+    Game: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change', => @render()
+        app.player.on 'change', => @render()
 
-    render: ->
-      @$el.html Mustache.render @template,
-        game: app.game.attributes
-        hand: hand
-      $('#container').append @$el
-      return @
+      id: 'game'
+      template: $('#game-template').html()
 
-    events:
-      'click #mine': 'draw'
-    
-    draw: ->
-      socket.emit 'draw mine', app.game.id, (result) ->
-        hand.push result.card
-        app.game.set 'mine', result.mine
+      render: ->
+        @$el.html Mustache.render @template,
+          game: app.game.attributes
+          players: app.game.get('players')
+          hand: app.player.get('hand')
+          player: app.player.attributes
+        $('#container').append @$el
+        return @
+
+      events:
+        'click #mine': 'draw'
+      
+      draw: ->
+        socket.emit 'draw mine',
+          game: app.game
+          player: app.player
 
   # Routes
   # ============================================
@@ -72,22 +89,37 @@ $ ->
   class Routes extends Backbone.Router
     routes:
       '': 'home'
-      'games/:id': 'readGame'
+      'games/:id': 'showGame'
 
     home: ->
       app.view.remove() if app.view?
       app.view = new views.Home
       app.view.render()
 
-    readGame: (id) ->
-      unless app.game?
-        socket.emit 'read game', id, (model) ->
-          app.game = new models.Game model
-          app.view = new views.Game
-          app.view.render()
-      else
+    showGame: (id) ->
+      fetchGame = ->
+        # Create new backbone game from id url param.
+        app.game = new models.Game
+          id: id
+        # Create new view.
         app.view = new views.Game
-        app.view.render()
+        # Tell the server to add the current player to the game.
+        # The server knows whether or not the current player is
+        # already in the game and will not add them if they are.
+        socket.emit 'game add player',
+          player: app.player
+          game: app.game
+
+      app.player = new models.Player
+        id: sessionStorage.getItem('player id') or null
+      if app.player.isNew()
+        app.player.save {}, success: ->
+          app.player.set 'id', app.player.get '_id'
+          sessionStorage.setItem 'player id', app.player.id
+          fetchGame()
+      else
+        app.player.fetch success: ->
+          fetchGame()
 
   app.routes = new Routes
   Backbone.history.start()

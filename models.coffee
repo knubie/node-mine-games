@@ -3,7 +3,10 @@ Schema = mongoose.Schema
 
 # Schemas
 exports.gameSchema = new Schema
-  players: [String]
+  players: [
+    type: Schema.Types.ObjectId
+    ref: 'Player'
+  ]
   mine: Array
 
 exports.deckSchema = new Schema
@@ -14,6 +17,7 @@ exports.deckSchema = new Schema
 
 exports.playerSchema = new Schema
   name: String
+  hand: Array
   decks: [
     type: Schema.Types.ObjectId
     ref: 'Deck'

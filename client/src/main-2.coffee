@@ -149,18 +149,18 @@ $ ->
   app = {} # Create global app namespace.
 
   # Fetch games from server.
-  #app.games.fetch
-    #success: ->
-      ## Fetch players from server.
-      #app.players.fetch
-        #success: ->
-          ## Get / create player data from localStorage.
-          #if sessionStorage.getItem('player')
-            #app.player = app.players.get sessionStorage.getItem('player')
-          #else
-            #app.player = new Player
-              #name: 'Anonymous'
-            #app.players.add app.player
+  app.games.fetch
+    success: ->
+      # Fetch players from server.
+      app.players.fetch
+        success: ->
+          # Get / create player data from localStorage.
+          if sessionStorage.getItem('player')
+            app.player = app.players.get sessionStorage.getItem('player')
+          else
+            app.player = new Player
+              name: 'Anonymous'
+            app.players.add app.player
 
-          #app.routes = new Routes
-          #Backbone.history.start()
+          app.routes = new Routes
+          Backbone.history.start()

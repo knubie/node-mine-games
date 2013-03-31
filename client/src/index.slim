@@ -10,7 +10,7 @@ html
     link href="styles.css" rel="stylesheet"
     script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"
     script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"
-    script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"
+    script src="backbone.js"
     script src="mustache.js"
     script src="http://localhost:3000/socket.io/socket.io.js"
     script src="main.js"
@@ -21,6 +21,12 @@ html
       p Game ID: {{game._id}}
       #mine.card
         | Mine ({{game.mine.length}})
+      #players
+        | Players: {{game.players.length}}
+        p
+          | {{#players}}
+          p {{name}}
+          | {{/players}}
       #hand
         | {{#hand}}
         | {{.}} 

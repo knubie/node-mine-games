@@ -10,7 +10,7 @@
     <link href="styles.css" rel="stylesheet" />
     <script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"></script>
+    <script src="backbone.js"></script>
     <script src="mustache.js"></script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="main.js"></script>
@@ -20,6 +20,8 @@
     <script id="game-template">
       <p>Game ID: {{game._id}}</p>
       <div class="card" id="mine">Mine ({{game.mine.length}})</div>
+      <div id="players">Players: {{game.players.length}}<p>{{#players}}<p>{{name}}</p>{{/players}}</p>
+      </div>
       <div id="hand">{{#hand}}{{.}} {{/hand}}</div>
     </script>
   </head>

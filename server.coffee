@@ -5,9 +5,10 @@ express = require('express')
 
 app = express()
 server = require('http').createServer(app)
-io = require('socket.io').listen(server)
+io = require('socket.io').listen(server, {log: false})
 
 io.sockets.on 'connection', (socket) ->
+
   socket.on 'create game', (model, callback) ->
     console.log 'Creating new Game.'
     game = new Game
@@ -23,25 +24,67 @@ io.sockets.on 'connection', (socket) ->
 
     console.log 'made game.'
     game.save (err) ->
-      if err then console.log err
-      console.log 'game saved.'
       callback game
 
   socket.on 'read game', (id, callback) ->
     Game.findById id, (err, game) ->
-      if err then console.log err
       callback game
 
-  socket.on 'draw mine', (id, callback) ->
+  socket.on 'game add player', (req, callback) ->
+    console.log req
+    populateGame = ->
+      Game
+        .findById(req.game.id)
+        .populate('players')
+        .exec (err, game) ->
+          socket.broadcast.emit game.id, game
+          socket.emit game.id, game
+
+    Game.findById req.game.id, (err, game) ->
+      Player.findById req.player.id, (err, player) ->
+        console.log 'found game and player'
+        ps = game.players
+        console.log game
+        if ps.indexOf(player._id) is -1
+          console.log 'adding player to game'
+          ps.push player._id
+          game.update players: ps, ->
+            populateGame()
+        else
+          populateGame()
+
+  socket.on 'create player', (model, callback) ->
+    player = new Player
+      name: 'Anonymous'
+    player.save (err) ->
+      if err then console.log err
+      callback player
+
+  socket.on 'read player', (id, callback) ->
+    Player.findById id, (err, player) ->
+      if err then console.log err
+      callback player
+
+  socket.on 'draw mine', (req, callback) ->
+    console.log req.game
+    populateGame = ->
+      Game
+        .findById(req.game.id)
+        .populate('players')
+        .exec (err, game) ->
+          socket.broadcast.emit game.id, game
+          socket.emit game.id, game
     console.log 'draw from mine'
-    Game.findById id, (err, game) ->
+    Game.findById req.game.id, (err, game) ->
       if err then console.log err
       card = game.mine.pop()
       game.save (err) ->
-        socket.broadcast.emit "game update #{id}", game
-        callback
-          mine: game.mine
-          card: card
+        Player.findByIdAndUpdate req.player.id, { $push: { hand: card } }, (err, player) ->
+          populateGame()
+          socket.broadcast.emit player.id, player
+          socket.emit player.id, player
+
+
 
 cors = (req, res, next) ->
   res.header("Access-Control-Allow-Origin", "*")
@@ -56,7 +99,7 @@ mongoose.connect 'mongodb://localhost/test'
 db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once 'open', ->
-  console.log 'connected to mongo!'
+  console.log 'Connected to mongo!'
 
 # Create model
 Game = mongoose.model 'Game', models.gameSchema

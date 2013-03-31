@@ -4,130 +4,153 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   $(function() {
-    var Routes, SERVER_URL, app, hand, models, socket, views;
-    SERVER_URL = "http://localhost:3000";
-    models = {};
-    views = {};
-    app = {};
+    var Routes, app, hand, models, socket, views;
+    app = {
+      url: "http://localhost:3000"
+    };
     hand = [];
-    socket = io.connect(SERVER_URL);
-    models.Game = (function(_super) {
-
-      __extends(Game, _super);
-
-      function Game() {
-        return Game.__super__.constructor.apply(this, arguments);
+    socket = io.connect(app.url);
+    Backbone.sync = function(method, model, options) {
+      if (method === 'create') {
+        socket.emit("create " + model.name, model, options.success);
       }
-
-      Game.prototype.initialize = function() {
-        var _this = this;
-        return socket.on("game update " + this.id, function(game) {
-          return _this.set(game);
-        });
-      };
-
-      Game.prototype.idAttribute = "_id";
-
-      return Game;
-
-    })(Backbone.Model);
-    models.Player = (function(_super) {
-
-      __extends(Player, _super);
-
-      function Player() {
-        return Player.__super__.constructor.apply(this, arguments);
+      if (method === 'read') {
+        return socket.emit("read " + model.name, model.id, options.success);
       }
+    };
+    models = {
+      Game: (function(_super) {
 
-      Player.prototype.initialize = function() {
-        var _this = this;
-        return socket.on("player update " + this.id, function(player) {
-          return _this.set(player);
-        });
-      };
+        __extends(_Class, _super);
 
-      Player.prototype.idAttribute = "_id";
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
 
-      return Player;
-
-    })(Backbone.Model);
-    views.Home = (function(_super) {
-
-      __extends(Home, _super);
-
-      function Home() {
-        return Home.__super__.constructor.apply(this, arguments);
-      }
-
-      Home.prototype.id = 'home';
-
-      Home.prototype.template = $('#home-template').html();
-
-      Home.prototype.render = function() {
-        this.$el.html(Mustache.render(this.template));
-        $('#container').append(this.$el);
-        return this;
-      };
-
-      Home.prototype.events = {
-        'click #new-game': 'createGame'
-      };
-
-      Home.prototype.createGame = function() {
-        return socket.emit('create game', {}, function(model) {
-          app.game = new models.Game(model);
-          return app.routes.navigate("games/" + app.game.id, {
-            trigger: true
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          return socket.on(this.id, function(game) {
+            console.log('got game broadcast');
+            console.log(game);
+            return _this.set(game);
           });
-        });
-      };
+        };
 
-      return Home;
+        _Class.prototype.name = 'game';
 
-    })(Backbone.View);
-    views.Game = (function(_super) {
+        return _Class;
 
-      __extends(Game, _super);
+      })(Backbone.Model),
+      Player: (function(_super) {
 
-      function Game() {
-        return Game.__super__.constructor.apply(this, arguments);
-      }
+        __extends(_Class, _super);
 
-      Game.prototype.initialize = function() {
-        var _this = this;
-        return app.game.on('change', function() {
-          _this.render();
-          return console.log('game changed');
-        });
-      };
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
 
-      Game.prototype.id = 'game';
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          return socket.on(this.id, function(player) {
+            console.log('got player broadcast');
+            console.log(player);
+            return _this.set(player);
+          });
+        };
 
-      Game.prototype.template = $('#game-template').html();
+        _Class.prototype.name = 'player';
 
-      Game.prototype.render = function() {
-        this.$el.html(Mustache.render(this.template, {
-          game: app.game.attributes,
-          hand: hand
-        }));
-        $('#container').append(this.$el);
-        return this;
-      };
+        return _Class;
 
-      Game.prototype.events = {
-        'click #mine': 'draw'
-      };
+      })(Backbone.Model)
+    };
+    views = {
+      Home: (function(_super) {
 
-      Game.prototype.draw = function() {
-        return socket.emit('draw mine', app.game.id, function(result) {
-          hand.push(result.card);
-          return app.game.set('mine', result.mine);
-        });
-      };
+        __extends(_Class, _super);
 
-      return Game;
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
 
-    })(Backbone.View);
+        _Class.prototype.id = 'home';
+
+        _Class.prototype.template = $('#home-template').html();
+
+        _Class.prototype.render = function() {
+          this.$el.html(Mustache.render(this.template));
+          $('#container').append(this.$el);
+          return this;
+        };
+
+        _Class.prototype.events = {
+          'click #new-game': 'createGame'
+        };
+
+        _Class.prototype.createGame = function() {
+          app.game = new models.Game;
+          return app.game.save({}, {
+            success: function() {
+              app.game.set('id', app.game.get('_id'));
+              console.log(app.game);
+              return app.routes.navigate("games/" + app.game.id, {
+                trigger: true
+              });
+            }
+          });
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Game: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change', function() {
+            return _this.render();
+          });
+          return app.player.on('change', function() {
+            return _this.render();
+          });
+        };
+
+        _Class.prototype.id = 'game';
+
+        _Class.prototype.template = $('#game-template').html();
+
+        _Class.prototype.render = function() {
+          this.$el.html(Mustache.render(this.template, {
+            game: app.game.attributes,
+            players: app.game.get('players'),
+            hand: app.player.get('hand'),
+            player: app.player.attributes
+          }));
+          $('#container').append(this.$el);
+          return this;
+        };
+
+        _Class.prototype.events = {
+          'click #mine': 'draw'
+        };
+
+        _Class.prototype.draw = function() {
+          return socket.emit('draw mine', {
+            game: app.game,
+            player: app.player
+          });
+        };
+
+        return _Class;
+
+      })(Backbone.View)
+    };
     Routes = (function(_super) {
 
       __extends(Routes, _super);
@@ -138,7 +161,7 @@
 
       Routes.prototype.routes = {
         '': 'home',
-        'games/:id': 'readGame'
+        'games/:id': 'showGame'
       };
 
       Routes.prototype.home = function() {
@@ -149,16 +172,35 @@
         return app.view.render();
       };
 
-      Routes.prototype.readGame = function(id) {
-        if (app.game == null) {
-          return socket.emit('read game', id, function(model) {
-            app.game = new models.Game(model);
-            app.view = new views.Game;
-            return app.view.render();
+      Routes.prototype.showGame = function(id) {
+        var fetchGame;
+        fetchGame = function() {
+          app.game = new models.Game({
+            id: id
+          });
+          app.view = new views.Game;
+          return socket.emit('game add player', {
+            player: app.player,
+            game: app.game
+          });
+        };
+        app.player = new models.Player({
+          id: sessionStorage.getItem('player id') || null
+        });
+        if (app.player.isNew()) {
+          return app.player.save({}, {
+            success: function() {
+              app.player.set('id', app.player.get('_id'));
+              sessionStorage.setItem('player id', app.player.id);
+              return fetchGame();
+            }
           });
         } else {
-          app.view = new views.Game;
-          return app.view.render();
+          return app.player.fetch({
+            success: function() {
+              return fetchGame();
+            }
+          });
         }
       };
 
