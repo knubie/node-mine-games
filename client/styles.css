@@ -1,5 +1,46 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto+Condensed:400,700);
+body {
+  background-image: url(img/bg.jpg);
+  font-size: 14px;
+  font-family: "Roboto Condensed", sans-serif; }
+
 #home #new-game:hover {
   cursor: pointer; }
+
+.card {
+  background-color: #eeeeee;
+  border: 2px solid white;
+  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  width: 100px;
+  height: 130px;
+  text-align: center;
+  box-sizing: border-box;
+  padding-top: 50px;
+  color: #333333;
+  text-transform: uppercase;
+  -webkit-user-select: none;
+  display: inline-block;
+  margin: 7px; }
+
+.gem {
+  background-size: 177%;
+  background-position: center; }
+
+.emerald {
+  background-image: url(img/emerald.png); }
+
+.ruby {
+  background-image: url(img/ruby.png); }
+
+.diamond {
+  background-image: url(img/diamond.png); }
+
+.goblin {
+  background-image: url(img/ex.png); }
+
+.card:active {
+  -webkit-transform: translate(1px, 1px); }
 
 #mine:hover {
   cursor: pointer; }

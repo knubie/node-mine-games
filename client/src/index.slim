@@ -8,14 +8,15 @@ html
     meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport"
     link href="css/reset.css" rel="stylesheet"
     link href="styles.css" rel="stylesheet"
-    script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"
+    script src="jquery.js"
+    script src="jquery-ui.js"
     script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"
     script src="backbone.js"
     script src="mustache.js"
     script src="http://localhost:3000/socket.io/socket.io.js"
     script src="main.js"
     script id="home-template"
-      #new-game
+      #new-game.button
         | New Game
     script id="game-template"
       p Game ID: {{game._id}}
@@ -29,7 +30,7 @@ html
           | {{/players}}
       #hand
         | {{#hand}}
-        | {{.}} 
+        .card.gem class="{{.}}" data-card="{{.}}"
         | {{/hand}}
       /p
         /| players: 

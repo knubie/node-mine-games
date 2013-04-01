@@ -36,7 +36,16 @@
           });
         };
 
+        _Class.prototype.idAttribute = '_id';
+
         _Class.prototype.name = 'game';
+
+        _Class.prototype.addPlayer = function(player) {
+          return socket.emit('game add player', {
+            player: player,
+            game: this
+          });
+        };
 
         return _Class;
 
@@ -57,6 +66,8 @@
             return _this.set(player);
           });
         };
+
+        _Class.prototype.idAttribute = '_id';
 
         _Class.prototype.name = 'player';
 
@@ -91,8 +102,7 @@
           app.game = new models.Game;
           return app.game.save({}, {
             success: function() {
-              app.game.set('id', app.game.get('_id'));
-              console.log(app.game);
+              console.log(app.game.get('_id'));
               return app.routes.navigate("games/" + app.game.id, {
                 trigger: true
               });
@@ -129,11 +139,22 @@
           this.$el.html(Mustache.render(this.template, {
             game: app.game.attributes,
             players: app.game.get('players'),
-            hand: app.player.get('hand'),
-            player: app.player.attributes
+            hand: app.player.get('hand')
           }));
           $('#container').append(this.$el);
-          return this;
+          return $('#hand').sortable({
+            update: function() {
+              hand = [];
+              $(this).children().each(function() {
+                return hand.push($(this).attr('data-card'));
+              });
+              console.log(hand);
+              return socket.emit('sort hand', {
+                player: app.player,
+                hand: hand
+              });
+            }
+          });
         };
 
         _Class.prototype.events = {
@@ -174,24 +195,26 @@
 
       Routes.prototype.showGame = function(id) {
         var fetchGame;
+        if (app.view != null) {
+          app.view.remove();
+        }
         fetchGame = function() {
           app.game = new models.Game({
-            id: id
+            _id: id
           });
           app.view = new views.Game;
-          return socket.emit('game add player', {
-            player: app.player,
-            game: app.game
-          });
+          return app.game.addPlayer(app.player);
         };
         app.player = new models.Player({
-          id: sessionStorage.getItem('player id') || null
+          _id: sessionStorage.getItem('player id') || null
         });
         if (app.player.isNew()) {
           return app.player.save({}, {
             success: function() {
-              app.player.set('id', app.player.get('_id'));
               sessionStorage.setItem('player id', app.player.id);
+              app.player = new models.Player({
+                _id: app.player.id
+              });
               return fetchGame();
             }
           });

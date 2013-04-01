@@ -22,7 +22,12 @@ $ ->
           console.log 'got game broadcast'
           console.log game
           @set game
+      idAttribute: '_id'
       name: 'game'
+      addPlayer: (player) ->
+        socket.emit 'game add player',
+          player: player
+          game: @
 
     Player: class extends Backbone.Model
       initialize: ->
@@ -30,6 +35,7 @@ $ ->
           console.log 'got player broadcast'
           console.log player
           @set player
+      idAttribute: '_id'
       name: 'player'
 
   # Views
@@ -53,8 +59,7 @@ $ ->
         app.game = new models.Game
         app.game.save {},
           success: ->
-            app.game.set 'id', app.game.get '_id'
-            console.log app.game
+            console.log app.game.get '_id'
             app.routes.navigate "games/#{app.game.id}",
               trigger: true # Trigger the routes event for this path.
 
@@ -71,9 +76,16 @@ $ ->
           game: app.game.attributes
           players: app.game.get('players')
           hand: app.player.get('hand')
-          player: app.player.attributes
         $('#container').append @$el
-        return @
+        $('#hand').sortable
+          update: ->
+            hand = []
+            $(this).children().each ->
+              hand.push $(this).attr('data-card')
+            console.log hand
+            socket.emit 'sort hand',
+              player: app.player
+              hand: hand
 
       events:
         'click #mine': 'draw'
@@ -97,25 +109,21 @@ $ ->
       app.view.render()
 
     showGame: (id) ->
+      app.view.remove() if app.view?
+
       fetchGame = ->
-        # Create new backbone game from id url param.
         app.game = new models.Game
-          id: id
-        # Create new view.
+          _id: id
         app.view = new views.Game
-        # Tell the server to add the current player to the game.
-        # The server knows whether or not the current player is
-        # already in the game and will not add them if they are.
-        socket.emit 'game add player',
-          player: app.player
-          game: app.game
+        app.game.addPlayer app.player
 
       app.player = new models.Player
-        id: sessionStorage.getItem('player id') or null
+        _id: sessionStorage.getItem('player id') or null
       if app.player.isNew()
         app.player.save {}, success: ->
-          app.player.set 'id', app.player.get '_id'
           sessionStorage.setItem 'player id', app.player.id
+          app.player = new models.Player # Create model to update socket.on
+            _id: app.player.id
           fetchGame()
       else
         app.player.fetch success: ->

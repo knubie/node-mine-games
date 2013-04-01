@@ -12,17 +12,15 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'create game', (model, callback) ->
     console.log 'Creating new Game.'
     game = new Game
-      #players: model.players
       players: []
       mine: do ->
         mine = []
-        mine.push('copper') for [1..20]
-        mine.push('silver') for [1..10]
-        mine.push('gold') for [1..5]
+        mine.push('emerald') for [1..20]
+        mine.push('ruby') for [1..10]
+        mine.push('diamond') for [1..5]
         mine.push('goblin') for [1..5]
         return _.shuffle(mine)
 
-    console.log 'made game.'
     game.save (err) ->
       callback game
 
@@ -31,18 +29,17 @@ io.sockets.on 'connection', (socket) ->
       callback game
 
   socket.on 'game add player', (req, callback) ->
-    console.log req
+    #TODO: limit players to four
     populateGame = ->
       Game
-        .findById(req.game.id)
+        .findById(req.game._id)
         .populate('players')
         .exec (err, game) ->
           socket.broadcast.emit game.id, game
           socket.emit game.id, game
 
-    Game.findById req.game.id, (err, game) ->
-      Player.findById req.player.id, (err, player) ->
-        console.log 'found game and player'
+    Game.findById req.game._id, (err, game) ->
+      Player.findById req.player._id, (err, player) ->
         ps = game.players
         console.log game
         if ps.indexOf(player._id) is -1
@@ -66,23 +63,37 @@ io.sockets.on 'connection', (socket) ->
       callback player
 
   socket.on 'draw mine', (req, callback) ->
-    console.log req.game
     populateGame = ->
       Game
-        .findById(req.game.id)
+        .findById(req.game._id)
         .populate('players')
         .exec (err, game) ->
-          socket.broadcast.emit game.id, game
-          socket.emit game.id, game
+          socket.broadcast.emit game._id, game
+          socket.emit game._id, game
     console.log 'draw from mine'
-    Game.findById req.game.id, (err, game) ->
+    Game.findById req.game._id, (err, game) ->
       if err then console.log err
       card = game.mine.pop()
       game.save (err) ->
-        Player.findByIdAndUpdate req.player.id, { $push: { hand: card } }, (err, player) ->
-          populateGame()
-          socket.broadcast.emit player.id, player
-          socket.emit player.id, player
+        if card is 'goblin'
+          console.log '79'
+          Player.findByIdAndUpdate req.player._id
+          , {hand: []}, (err, player) ->
+            populateGame()
+            socket.broadcast.emit player._id, player
+            socket.emit player._id, player
+        else
+          Player.findByIdAndUpdate req.player._id
+          , { $push: { hand: card } }, (err, player) ->
+            populateGame()
+            socket.broadcast.emit player._id, player
+            socket.emit player._id, player
+
+  socket.on 'sort hand', (req, callback) ->
+    Player.findByIdAndUpdate req.player._id
+    , {hand: req.hand}, (err, player) ->
+      socket.broadcast.emit player._id, player
+      socket.emit player._id, player
 
 
 
