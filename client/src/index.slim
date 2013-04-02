@@ -18,30 +18,25 @@ html
     script id="home-template"
       #new-game.button
         | New Game
-    script id="game-template"
-      p Game ID: {{game._id}}
-      #mine.card
-        | Mine ({{game.mine.length}})
-      #players
-        | Players: {{game.players.length}}
-        p
-          | {{#players}}
-          p {{name}}
-          | {{/players}}
-      #hand
-        | {{#hand}}
-        .card.gem class="{{.}}" data-card="{{.}}"
-        | {{/hand}}
-      /p
-        /| players: 
-        /form#player
-          /input.player-name type='text' placeholder='name' value='{{player}}'
-        /| {{#players}}
-        /p
-          /| {{name}}
-        /| {{/players}}
-        /#logout logout
-      /#cards
-        /| Cards: 
+
+    script id="mine-template"
+      | Mine ({{mine.length}})
+
+    script id="players-template"
+      | Players: {{players.length}}
+      | {{#players}}
+      | {{name}}
+      | {{/players}}
+
+    script id="points-template"
+      img src='img/gem-icon.png' width="19" height="21"
+      | {{points}}
+
+    script id="hand-template"
+      | {{#hand}}
+      .card.gem class="{{.}}" data-card="{{.}}"
+      | {{/hand}}
   body
     #container
+      #info
+      #game

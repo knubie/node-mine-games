@@ -39,7 +39,7 @@ player1.thenClick '#new-game', ->
       player1.test.assertSelectorHasText '#mine', 'Mine (39)'
       , 'Player1: Correct number of cards in mine(39).'
 
-      player1.test.assertExists '.card'
+      player1.test.assertExists '.gem'
       , 'Player1: Hand has updated with a new card.'
 
       player2.test.assertSelectorHasText '#mine', 'Mine (39)'

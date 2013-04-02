@@ -53,6 +53,7 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'create player', (model, callback) ->
     player = new Player
       name: 'Anonymous'
+      turn: true
     player.save (err) ->
       if err then console.log err
       callback player
@@ -63,39 +64,49 @@ io.sockets.on 'connection', (socket) ->
       callback player
 
   socket.on 'draw mine', (req, callback) ->
-    populateGame = ->
+    populateGame = (cb) ->
       Game
         .findById(req.game._id)
         .populate('players')
         .exec (err, game) ->
           socket.broadcast.emit game._id, game
           socket.emit game._id, game
+          cb() if cb?
     console.log 'draw from mine'
     Game.findById req.game._id, (err, game) ->
-      if err then console.log err
-      card = game.mine.pop()
-      game.save (err) ->
-        if card is 'goblin'
-          console.log '79'
-          Player.findByIdAndUpdate req.player._id
-          , {hand: []}, (err, player) ->
-            populateGame()
-            socket.broadcast.emit player._id, player
-            socket.emit player._id, player
+      Player.findById req.player._id, (err, player) ->
+        if player.turn is true
+          if game.mine.length < 1
+            socket.emit 'alert', text: 'The Mine is empty!'
+          else
+            card = game.mine.pop()
+            game.save (err) ->
+              if card is 'goblin'
+                player.update {hand: [], turn: false}, (err, player) ->
+                  populateGame ->
+                    socket.emit 'bust', {}
+                  #socket.emit player._id, player
+              else
+                Player.findByIdAndUpdate req.player._id
+                , { $push: { hand: card } }, (err, player) ->
+                  populateGame()
+                  socket.emit player._id, player
         else
-          Player.findByIdAndUpdate req.player._id
-          , { $push: { hand: card } }, (err, player) ->
-            populateGame()
-            socket.broadcast.emit player._id, player
-            socket.emit player._id, player
+          socket.emit 'alert', text: 'Your turn is over!'
 
   socket.on 'sort hand', (req, callback) ->
-    Player.findByIdAndUpdate req.player._id
-    , {hand: req.hand}, (err, player) ->
-      socket.broadcast.emit player._id, player
-      socket.emit player._id, player
-
-
+    newPoints = 0
+    value =
+      emerald: 1
+      ruby: 3
+      diamond: 5
+    Player.findById req.player._id, (err, player) ->
+      for card in req.hand
+        newPoints += value[card]
+      if newPoints == player.points
+        player.update hand: req.hand, ->
+          socket.broadcast.emit player._id, player
+          socket.emit player._id, player
 
 cors = (req, res, next) ->
   res.header("Access-Control-Allow-Origin", "*")

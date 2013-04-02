@@ -18,15 +18,16 @@
     <script id="home-template">
       <div class="button" id="new-game">New Game</div>
     </script>
-    <script id="game-template">
-      <p>Game ID: {{game._id}}</p>
-      <div class="card" id="mine">Mine ({{game.mine.length}})</div>
-      <div id="players">Players: {{game.players.length}}<p>{{#players}}<p>{{name}}</p>{{/players}}</p>
-      </div>
-      <div id="hand">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}"></div>{{/hand}}</div>
-    </script>
+    <script id="mine-template">Mine ({{mine.length}})</script>
+    <script id="players-template">Players: {{players.length}}{{#players}}{{name}}{{/players}}</script>
+    <script id="points-template">
+      <img height="21" src="img/gem-icon.png" width="19" />{{points}}</script>
+    <script id="hand-template">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}"></div>{{/hand}}</script>
   </head>
   <body>
-    <div id="container"></div>
+    <div id="container">
+      <div id="info"></div>
+      <div id="game"></div>
+    </div>
   </body>
 </html>

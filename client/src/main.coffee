@@ -4,6 +4,14 @@ $ ->
   hand = []
   socket = io.connect(app.url)
 
+  socket.on "alert", (message) -> alert message.text
+  socket.on 'bust', ->
+    $('#hand').append "<div class='card gem goblin'></div>"
+    $('#hand').children().fadeOut ->
+      app.player.fetch (player) ->
+        app.player.set player
+
+
   Backbone.sync = (method, model, options) ->
     if method is 'create'
       socket.emit "create #{model.name}", model, options.success
@@ -31,12 +39,35 @@ $ ->
 
     Player: class extends Backbone.Model
       initialize: ->
+        @set 'hand', []
         socket.on @id, (player) =>
           console.log 'got player broadcast'
           console.log player
           @set player
       idAttribute: '_id'
       name: 'player'
+      points: ->
+        points = 0
+        value =
+          emerald: 1
+          ruby: 3
+          diamond: 5
+        count =
+          emerald: 0
+          ruby: 0
+          diamond: 0
+        for card in @get('hand')
+          points += value[card]
+          count[card]++
+        points += parseInt(count.emerald/4)*4
+        points += parseInt(count.ruby/3)*9
+        points += parseInt(count.diamond/2)*10
+        return points
+
+      sortHand: (hand) ->
+        socket.emit 'sort hand',
+          player: @
+          hand: hand
 
   # Views
   # ============================================
@@ -65,35 +96,83 @@ $ ->
 
     Game: class extends Backbone.View
       initialize: ->
-        app.game.on 'change', => @render()
-        app.player.on 'change', => @render()
+        console.log 'new game view'
+        @hand = new views.Hand
+        @hand.render()
+        @points = new views.Points
+        @points.render()
+        @players = new views.Players
+        @players.render()
+        @mine = new views.Mine
+        @mine.render()
 
-      id: 'game'
       template: $('#game-template').html()
+
+    Mine: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change:mine', => @render
+        @$el.addClass 'card'
+        $('#game').append @$el
+
+      id: 'mine'
+      template: $('#mine-template').html()
 
       render: ->
         @$el.html Mustache.render @template,
-          game: app.game.attributes
-          players: app.game.get('players')
+          mine: app.game.get('mine')
+
+      events:
+        'click': 'draw'
+      
+      draw: ->
+        console.log 'drawing'
+        socket.emit 'draw mine',
+          game: app.game
+          player: app.player
+
+
+
+    Hand: class extends Backbone.View
+      initialize: ->
+        app.player.on 'change:hand', => @render()
+        $('#game').append @$el
+
+      id: 'hand'
+      template: $('#hand-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
           hand: app.player.get('hand')
-        $('#container').append @$el
+
         $('#hand').sortable
           update: ->
             hand = []
             $(this).children().each ->
               hand.push $(this).attr('data-card')
-            console.log hand
-            socket.emit 'sort hand',
-              player: app.player
-              hand: hand
+            app.player.sortHand hand
 
-      events:
-        'click #mine': 'draw'
-      
-      draw: ->
-        socket.emit 'draw mine',
-          game: app.game
-          player: app.player
+    Points: class extends Backbone.View
+      initialize: ->
+        app.player.on 'change:hand', => @render()
+        $('#info').append @$el
+
+      id: 'points'
+
+      template: $('#points-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          points: app.player.points()
+
+    Players: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change:players', => @render()
+        $('#info').append @$el
+
+      id: 'players'
+
+      template: $('#players-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          players: app.game.get('players')
 
   # Routes
   # ============================================

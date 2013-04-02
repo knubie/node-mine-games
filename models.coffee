@@ -22,6 +22,19 @@ exports.playerSchema = new Schema
     type: Schema.Types.ObjectId
     ref: 'Deck'
   ]
+  turn: Boolean
+
+exports.playerSchema.virtual('points').get ->
+  points = 0
+  value =
+    emerald: 1
+    ruby: 3
+    diamond: 5
+  for card in @hand
+    points += value[card]
+
+  return points
+
 
 exports.playerSchema.method
   draw: (deck) ->

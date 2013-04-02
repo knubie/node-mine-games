@@ -10,6 +10,17 @@
     };
     hand = [];
     socket = io.connect(app.url);
+    socket.on("alert", function(message) {
+      return alert(message.text);
+    });
+    socket.on('bust', function() {
+      $('#hand').append("<div class='card gem goblin'></div>");
+      return $('#hand').children().fadeOut(function() {
+        return app.player.fetch(function(player) {
+          return app.player.set(player);
+        });
+      });
+    });
     Backbone.sync = function(method, model, options) {
       if (method === 'create') {
         socket.emit("create " + model.name, model, options.success);
@@ -60,6 +71,7 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
+          this.set('hand', []);
           return socket.on(this.id, function(player) {
             console.log('got player broadcast');
             console.log(player);
@@ -70,6 +82,38 @@
         _Class.prototype.idAttribute = '_id';
 
         _Class.prototype.name = 'player';
+
+        _Class.prototype.points = function() {
+          var card, count, points, value, _i, _len, _ref;
+          points = 0;
+          value = {
+            emerald: 1,
+            ruby: 3,
+            diamond: 5
+          };
+          count = {
+            emerald: 0,
+            ruby: 0,
+            diamond: 0
+          };
+          _ref = this.get('hand');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            card = _ref[_i];
+            points += value[card];
+            count[card]++;
+          }
+          points += parseInt(count.emerald / 4) * 4;
+          points += parseInt(count.ruby / 3) * 9;
+          points += parseInt(count.diamond / 2) * 10;
+          return points;
+        };
+
+        _Class.prototype.sortHand = function(hand) {
+          return socket.emit('sort hand', {
+            player: this,
+            hand: hand
+          });
+        };
 
         return _Class;
 
@@ -122,50 +166,155 @@
         }
 
         _Class.prototype.initialize = function() {
-          var _this = this;
-          app.game.on('change', function() {
-            return _this.render();
-          });
-          return app.player.on('change', function() {
-            return _this.render();
-          });
+          console.log('new game view');
+          this.hand = new views.Hand;
+          this.hand.render();
+          this.points = new views.Points;
+          this.points.render();
+          this.players = new views.Players;
+          this.players.render();
+          this.mine = new views.Mine;
+          return this.mine.render();
         };
-
-        _Class.prototype.id = 'game';
 
         _Class.prototype.template = $('#game-template').html();
 
+        return _Class;
+
+      })(Backbone.View),
+      Mine: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:mine', function() {
+            return _this.render;
+          });
+          this.$el.addClass('card');
+          return $('#game').append(this.$el);
+        };
+
+        _Class.prototype.id = 'mine';
+
+        _Class.prototype.template = $('#mine-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            mine: app.game.get('mine')
+          }));
+        };
+
+        _Class.prototype.events = {
+          'click': 'draw'
+        };
+
+        _Class.prototype.draw = function() {
+          console.log('drawing');
+          return socket.emit('draw mine', {
+            game: app.game,
+            player: app.player
+          });
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Hand: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.player.on('change:hand', function() {
+            return _this.render();
+          });
+          return $('#game').append(this.$el);
+        };
+
+        _Class.prototype.id = 'hand';
+
+        _Class.prototype.template = $('#hand-template').html();
+
         _Class.prototype.render = function() {
           this.$el.html(Mustache.render(this.template, {
-            game: app.game.attributes,
-            players: app.game.get('players'),
             hand: app.player.get('hand')
           }));
-          $('#container').append(this.$el);
           return $('#hand').sortable({
             update: function() {
               hand = [];
               $(this).children().each(function() {
                 return hand.push($(this).attr('data-card'));
               });
-              console.log(hand);
-              return socket.emit('sort hand', {
-                player: app.player,
-                hand: hand
-              });
+              return app.player.sortHand(hand);
             }
           });
         };
 
-        _Class.prototype.events = {
-          'click #mine': 'draw'
+        return _Class;
+
+      })(Backbone.View),
+      Points: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.player.on('change:hand', function() {
+            return _this.render();
+          });
+          return $('#info').append(this.$el);
         };
 
-        _Class.prototype.draw = function() {
-          return socket.emit('draw mine', {
-            game: app.game,
-            player: app.player
+        _Class.prototype.id = 'points';
+
+        _Class.prototype.template = $('#points-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            points: app.player.points()
+          }));
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Players: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:players', function() {
+            return _this.render();
           });
+          return $('#info').append(this.$el);
+        };
+
+        _Class.prototype.id = 'players';
+
+        _Class.prototype.template = $('#players-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            players: app.game.get('players')
+          }));
         };
 
         return _Class;
