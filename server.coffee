@@ -1,6 +1,7 @@
 mongoose = require 'mongoose'
 models = require './models'
 _ = require 'underscore'
+sugar = require 'sugar'
 express = require('express')
 
 app = express()
@@ -13,13 +14,14 @@ io.sockets.on 'connection', (socket) ->
     console.log 'Creating new Game.'
     game = new Game
       players: []
+      discarded: []
       mine: do ->
         mine = []
-        mine.push('emerald') for [1..20]
-        mine.push('ruby') for [1..10]
-        mine.push('diamond') for [1..5]
+        mine.push('emerald') for [1..6]
+        mine.push('ruby') for [1..6]
+        mine.push('diamond') for [1..6]
         mine.push('goblin') for [1..5]
-        return _.shuffle(mine)
+        return mine.randomize()
 
     game.save (err) ->
       callback game
@@ -63,6 +65,16 @@ io.sockets.on 'connection', (socket) ->
       if err then console.log err
       callback player
 
+  socket.on 'draw discarded', (req, callback) ->
+    Game.findById req.game._id, (err, game) ->
+      Player.findById req.player._id, (err, player) ->
+        player.hand.push game.discarded.pop()
+        player.save (err, player) ->
+          socket.emit player._id, player
+          game.save (err, game) ->
+            socket.broadcast.emit game._id, game
+            socket.emit game._id, game
+
   socket.on 'draw mine', (req, callback) ->
     populateGame = (cb) ->
       Game
@@ -82,7 +94,8 @@ io.sockets.on 'connection', (socket) ->
             card = game.mine.pop()
             game.save (err) ->
               if card is 'goblin'
-                player.update {hand: [], turn: false}, (err, player) ->
+                #player.update {hand: [], turn: false}, (err, player) ->
+                player.update {hand: []}, (err, player) ->
                   populateGame ->
                     socket.emit 'bust', {}
                   #socket.emit player._id, player
@@ -93,6 +106,19 @@ io.sockets.on 'connection', (socket) ->
                   socket.emit player._id, player
         else
           socket.emit 'alert', text: 'Your turn is over!'
+
+  socket.on 'discard', (req, callback) ->
+    console.log req.game
+    Game.findById req.game._id, (err, game) ->
+      console.log game
+      Player.findById req.player._id, (err, player) ->
+        # Remove card from player's hand and add it to the game.discarded.
+        game.discarded.push player.hand.splice(player.hand.indexOf(req.card), 1)
+        player.save (err, player) ->
+          socket.emit player._id, player
+          game.save (err, game) ->
+            socket.broadcast.emit game._id, game
+            socket.emit game._id, game
 
   socket.on 'sort hand', (req, callback) ->
     newPoints = 0
@@ -108,15 +134,6 @@ io.sockets.on 'connection', (socket) ->
           socket.broadcast.emit player._id, player
           socket.emit player._id, player
 
-cors = (req, res, next) ->
-  res.header("Access-Control-Allow-Origin", "*")
-  res.header("Access-Control-Allow-Headers", "accept, origin, content-type, X-Requested-With")
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
-  next()
-
-app.use express.bodyParser()
-app.use cors
-
 mongoose.connect 'mongodb://localhost/test'
 db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
@@ -127,88 +144,6 @@ db.once 'open', ->
 Game = mongoose.model 'Game', models.gameSchema
 Player = mongoose.model 'Player', models.playerSchema
 #Deck = mongoose.model 'Deck', models.deckSchema
-
-app.options '*', (req, res) ->
-  res.send(200)
-
-app.get '/draw/:id', (req, res) ->
-  Game.findOne({ _id: req.params.id }).exec (err, game) ->
-    card = game.mine.pop()
-    game.save()
-    res.send(card)
-
-app.get '/game', (req, res) ->
-  Game.find({}).exec (err, games) ->
-    res.send(games)
-
-app.post '/game', (req, res) ->
-  console.log 'Creating new Game.'
-  game = new Game
-    #players: do ->
-      #players = []
-      #for player in req.body.players
-        #Player.findByIdAndUpdate player.id, player,
-          #upsert: true # Create if not found
-        #, (err, doc) ->
-          #doc.save (err) ->
-            #palyers.push doc.id
-      #return players
-    players: req.body.players
-    mine: do ->
-      mine = []
-      mine.push('copper') for [1..20]
-      mine.push('silver') for [1..10]
-      mine.push('gold') for [1..5]
-      return _.shuffle(mine)
-
-  game.save (err) ->
-    if err then console.log err
-    res.send(game)
-
-app.get '/game/:id', (req, res) ->
-  console.log 'game get'
-  Game.findOne({ _id: req.params.id })
-  .exec (err, game) ->
-    res.send(game)
-
-app.put '/game/:id', (req, res) ->
-  console.log 'Updating game.'
-  Game.findByIdAndUpdate req.params.id, {players:req.body.players}, ->
-    res.end()
-
-app.delete '/game/:id', (req, res) ->
-  console.log 'game delete'
-  Game.findOne({ _id: req.params.id })
-  .exec (err, game) ->
-    game.remove()
-    res.send(game)
-
-app.get '/player', (req, res) ->
-  Player.find({}).exec (err, players) ->
-    res.send(players)
-
-app.post '/player', (req, res) ->
-  player = new Player
-    name: req.body.name
-  player.save (err) ->
-    res.send(player)
-
-app.get '/player/:id', (req, res) ->
-  Player.findOne({ _id: req.params.id })
-  .exec (err, player) ->
-    res.send(player)
-
-app.put '/player/:id', (req, res) ->
-  console.log 'Updating player.'
-  #Player.update { _id: req.params.id }, req.body, ->
-  Player.findByIdAndUpdate req.params.id, {name:req.body.name}, ->
-    res.end()
-
-app.delete '/player/:id', (req, res) ->
-  Player.findOne({ _id: req.params.id })
-  .exec (err, player) ->
-    player.remove()
-    res.send(player)
 
 server.listen 3000
 console.log 'Listening on port 3000'

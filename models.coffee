@@ -8,6 +8,7 @@ exports.gameSchema = new Schema
     ref: 'Player'
   ]
   mine: Array
+  discarded: Array
 
 exports.deckSchema = new Schema
   player:

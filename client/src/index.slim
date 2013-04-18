@@ -23,9 +23,8 @@ html
       | Mine ({{mine.length}})
 
     script id="players-template"
-      | Players: {{players.length}}
       | {{#players}}
-      | {{name}}
+      | {{name}} 
       | {{/players}}
 
     script id="points-template"
@@ -35,8 +34,18 @@ html
     script id="hand-template"
       | {{#hand}}
       .card.gem class="{{.}}" data-card="{{.}}"
+        | &nbsp;
       | {{/hand}}
+
+    script id="discarded-template"
+      | {{#discarded}}
+      .card.gem class="{{.}}" data-card="{{.}}"
+        | &nbsp;
+      | {{/discarded}}
   body
     #container
       #info
       #game
+        #droppable-one
+          .empty-card
+            | &nbsp;

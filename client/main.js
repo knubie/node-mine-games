@@ -42,8 +42,8 @@
           var _this = this;
           return socket.on(this.id, function(game) {
             console.log('got game broadcast');
-            console.log(game);
-            return _this.set(game);
+            _this.set(game);
+            return app.view.mine.render();
           });
         };
 
@@ -83,13 +83,15 @@
 
         _Class.prototype.name = 'player';
 
+        _Class.prototype.totalPoints = 0;
+
         _Class.prototype.points = function() {
           var card, count, points, value, _i, _len, _ref;
           points = 0;
           value = {
             emerald: 1,
-            ruby: 3,
-            diamond: 5
+            ruby: 2,
+            diamond: 3
           };
           count = {
             emerald: 0,
@@ -99,19 +101,27 @@
           _ref = this.get('hand');
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             card = _ref[_i];
-            points += value[card];
+            points -= value[card];
             count[card]++;
           }
-          points += parseInt(count.emerald / 4) * 4;
-          points += parseInt(count.ruby / 3) * 9;
-          points += parseInt(count.diamond / 2) * 10;
+          points += parseInt(count.emerald / 3) * 3 * 2;
+          points += parseInt(count.ruby / 3) * 6 * 2;
+          points += parseInt(count.diamond / 3) * 9 * 2;
           return points;
         };
 
         _Class.prototype.sortHand = function(hand) {
           return socket.emit('sort hand', {
-            player: this,
+            player: this.attributes,
             hand: hand
+          });
+        };
+
+        _Class.prototype.discard = function(card) {
+          return socket.emit('discard', {
+            game: app.game.attributes,
+            player: this,
+            card: card
           });
         };
 
@@ -169,6 +179,8 @@
           console.log('new game view');
           this.hand = new views.Hand;
           this.hand.render();
+          this.discarded = new views.Discarded;
+          this.discarded.render();
           this.points = new views.Points;
           this.points.render();
           this.players = new views.Players;
@@ -192,11 +204,11 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          app.game.on('change:mine', function() {
+          app.game.on('change', function() {
             return _this.render;
           });
           this.$el.addClass('card');
-          return $('#game').append(this.$el);
+          return this.$el.insertBefore('#game > #droppable-one');
         };
 
         _Class.prototype.id = 'mine';
@@ -204,6 +216,7 @@
         _Class.prototype.template = $('#mine-template').html();
 
         _Class.prototype.render = function() {
+          console.log('render mine');
           return this.$el.html(Mustache.render(this.template, {
             mine: app.game.get('mine')
           }));
@@ -237,7 +250,7 @@
           app.player.on('change:hand', function() {
             return _this.render();
           });
-          return $('#game').append(this.$el);
+          return this.$el.insertAfter('#game > #droppable-one');
         };
 
         _Class.prototype.id = 'hand';
@@ -246,15 +259,67 @@
 
         _Class.prototype.render = function() {
           this.$el.html(Mustache.render(this.template, {
-            hand: app.player.get('hand')
+            hand: app.player.get('hand'),
+            value: {
+              emerald: 1,
+              ruby: 3,
+              diamond: 5
+            }
           }));
-          return $('#hand').sortable({
-            update: function() {
-              hand = [];
-              $(this).children().each(function() {
-                return hand.push($(this).attr('data-card'));
+          $('#hand').children().draggable();
+          return $('#droppable-one').droppable({
+            accept: '#hand > .card',
+            drop: function(e, ui) {
+              return app.player.discard(ui.draggable.attr('data-card'));
+            }
+          });
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Discarded: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:discarded', function() {
+            return _this.render();
+          });
+          $('#droppable-one').append(this.$el);
+          return console.log(app.game);
+        };
+
+        _Class.prototype.id = 'discarded';
+
+        _Class.prototype.template = $('#discarded-template').html();
+
+        _Class.prototype.render = function() {
+          this.$el.html(Mustache.render(this.template, {
+            discarded: app.game.get('discarded')
+          }));
+          $('#discarded').children().draggable({
+            revert: 'invalid'
+          });
+          $('#hand').droppable({
+            accept: '#discarded > .card',
+            drop: function(e, ui) {
+              console.log("Drew " + (ui.draggable.attr('data-card')));
+              return socket.emit('draw discarded', {
+                game: app.game.attributes,
+                player: app.player.attributes
               });
-              return app.player.sortHand(hand);
+            }
+          });
+          return $('#droppable-two').droppable({
+            drop: function(e, ui) {
+              ui.draggable.css;
+              return app.player.discard(ui.draggable.attr('data-card'));
             }
           });
         };
@@ -275,7 +340,7 @@
           app.player.on('change:hand', function() {
             return _this.render();
           });
-          return $('#info').append(this.$el);
+          return $('#info').prepend(this.$el);
         };
 
         _Class.prototype.id = 'points';
