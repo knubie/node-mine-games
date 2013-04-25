@@ -19,26 +19,17 @@ exports.deckSchema = new Schema
 exports.playerSchema = new Schema
   name: String
   hand: Array
+  points: Number
   decks: [
     type: Schema.Types.ObjectId
     ref: 'Deck'
   ]
   turn: Boolean
 
-exports.playerSchema.virtual('points').get ->
-  points = 0
-  value =
-    emerald: 1
-    ruby: 3
-    diamond: 5
-  for card in @hand
-    points += value[card]
-
-  return points
-
-
 exports.playerSchema.method
-  draw: (deck) ->
-    console.log 'drawing a card'
-  discard: (deck) ->
-    console.log 'discarding a card'
+  drawFrom: (deck) ->
+    if deck.length > 0 then @hand.push deck.pop()
+
+  discard: (card, game, cb) ->
+    game.discarded.push @hand.splice(@hand.indexOf(card), 1)
+    @save -> game.save -> cb()

@@ -21,6 +21,14 @@
         });
       });
     });
+    socket.on('score', function() {
+      $('#hand').append("<div class='card gem emerald'></div>");
+      return $('#hand').children().fadeOut(function() {
+        return app.player.fetch(function(player) {
+          return app.player.set(player);
+        });
+      });
+    });
     Backbone.sync = function(method, model, options) {
       if (method === 'create') {
         socket.emit("create " + model.name, model, options.success);
@@ -41,7 +49,6 @@
         _Class.prototype.initialize = function() {
           var _this = this;
           return socket.on(this.id, function(game) {
-            console.log('got game broadcast');
             _this.set(game);
             return app.view.mine.render();
           });
@@ -73,42 +80,15 @@
           var _this = this;
           this.set('hand', []);
           return socket.on(this.id, function(player) {
-            console.log('got player broadcast');
-            console.log(player);
-            return _this.set(player);
+            console.log('player updated');
+            _this.set(player);
+            return console.log(player);
           });
         };
 
         _Class.prototype.idAttribute = '_id';
 
         _Class.prototype.name = 'player';
-
-        _Class.prototype.totalPoints = 0;
-
-        _Class.prototype.points = function() {
-          var card, count, points, value, _i, _len, _ref;
-          points = 0;
-          value = {
-            emerald: 1,
-            ruby: 2,
-            diamond: 3
-          };
-          count = {
-            emerald: 0,
-            ruby: 0,
-            diamond: 0
-          };
-          _ref = this.get('hand');
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            card = _ref[_i];
-            points -= value[card];
-            count[card]++;
-          }
-          points += parseInt(count.emerald / 3) * 3 * 2;
-          points += parseInt(count.ruby / 3) * 6 * 2;
-          points += parseInt(count.diamond / 3) * 9 * 2;
-          return points;
-        };
 
         _Class.prototype.sortHand = function(hand) {
           return socket.emit('sort hand', {
@@ -156,7 +136,6 @@
           app.game = new models.Game;
           return app.game.save({}, {
             success: function() {
-              console.log(app.game.get('_id'));
               return app.routes.navigate("games/" + app.game.id, {
                 trigger: true
               });
@@ -176,7 +155,6 @@
         }
 
         _Class.prototype.initialize = function() {
-          console.log('new game view');
           this.hand = new views.Hand;
           this.hand.render();
           this.discarded = new views.Discarded;
@@ -216,7 +194,6 @@
         _Class.prototype.template = $('#mine-template').html();
 
         _Class.prototype.render = function() {
-          console.log('render mine');
           return this.$el.html(Mustache.render(this.template, {
             mine: app.game.get('mine')
           }));
@@ -227,10 +204,10 @@
         };
 
         _Class.prototype.draw = function() {
-          console.log('drawing');
-          return socket.emit('draw mine', {
+          return socket.emit('draw', {
             game: app.game,
-            player: app.player
+            player: app.player,
+            deck: 'mine'
           });
         };
 
@@ -247,7 +224,7 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          app.player.on('change:hand', function() {
+          app.player.on('change', function() {
             return _this.render();
           });
           return this.$el.insertAfter('#game > #droppable-one');
@@ -258,13 +235,9 @@
         _Class.prototype.template = $('#hand-template').html();
 
         _Class.prototype.render = function() {
+          console.log('render hand');
           this.$el.html(Mustache.render(this.template, {
-            hand: app.player.get('hand'),
-            value: {
-              emerald: 1,
-              ruby: 3,
-              diamond: 5
-            }
+            hand: app.player.get('hand')
           }));
           $('#hand').children().draggable();
           return $('#droppable-one').droppable({
@@ -291,8 +264,7 @@
           app.game.on('change:discarded', function() {
             return _this.render();
           });
-          $('#droppable-one').append(this.$el);
-          return console.log(app.game);
+          return $('#droppable-one').append(this.$el);
         };
 
         _Class.prototype.id = 'discarded';
@@ -309,10 +281,10 @@
           $('#hand').droppable({
             accept: '#discarded > .card',
             drop: function(e, ui) {
-              console.log("Drew " + (ui.draggable.attr('data-card')));
-              return socket.emit('draw discarded', {
+              return socket.emit('draw', {
                 game: app.game.attributes,
-                player: app.player.attributes
+                player: app.player.attributes,
+                deck: 'discarded'
               });
             }
           });
@@ -337,7 +309,7 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          app.player.on('change:hand', function() {
+          app.player.on('change:points', function() {
             return _this.render();
           });
           return $('#info').prepend(this.$el);
@@ -349,7 +321,7 @@
 
         _Class.prototype.render = function() {
           return this.$el.html(Mustache.render(this.template, {
-            points: app.player.points()
+            points: app.player.get('points')
           }));
         };
 

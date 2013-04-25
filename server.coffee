@@ -17,10 +17,10 @@ io.sockets.on 'connection', (socket) ->
       discarded: []
       mine: do ->
         mine = []
-        mine.push('emerald') for [1..6]
-        mine.push('ruby') for [1..6]
-        mine.push('diamond') for [1..6]
-        mine.push('goblin') for [1..5]
+        mine.push('emerald') for [1..7]
+        mine.push('ruby') for [1..7]
+        mine.push('diamond') for [1..7]
+        #mine.push('goblin') for [1..5]
         return mine.randomize()
 
     game.save (err) ->
@@ -43,9 +43,7 @@ io.sockets.on 'connection', (socket) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         ps = game.players
-        console.log game
         if ps.indexOf(player._id) is -1
-          console.log 'adding player to game'
           ps.push player._id
           game.update players: ps, ->
             populateGame()
@@ -56,6 +54,7 @@ io.sockets.on 'connection', (socket) ->
     player = new Player
       name: 'Anonymous'
       turn: true
+      points: 0
     player.save (err) ->
       if err then console.log err
       callback player
@@ -65,60 +64,23 @@ io.sockets.on 'connection', (socket) ->
       if err then console.log err
       callback player
 
-  socket.on 'draw discarded', (req, callback) ->
-    Game.findById req.game._id, (err, game) ->
-      Player.findById req.player._id, (err, player) ->
-        player.hand.push game.discarded.pop()
-        player.save (err, player) ->
-          socket.emit player._id, player
-          game.save (err, game) ->
-            socket.broadcast.emit game._id, game
-            socket.emit game._id, game
-
-  socket.on 'draw mine', (req, callback) ->
-    populateGame = (cb) ->
-      Game
-        .findById(req.game._id)
-        .populate('players')
-        .exec (err, game) ->
-          socket.broadcast.emit game._id, game
-          socket.emit game._id, game
-          cb() if cb?
-    console.log 'draw from mine'
+  socket.on 'draw', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if player.turn is true
-          if game.mine.length < 1
-            socket.emit 'alert', text: 'The Mine is empty!'
-          else
-            card = game.mine.pop()
-            game.save (err) ->
-              if card is 'goblin'
-                #player.update {hand: [], turn: false}, (err, player) ->
-                player.update {hand: []}, (err, player) ->
-                  populateGame ->
-                    socket.emit 'bust', {}
-                  #socket.emit player._id, player
-              else
-                Player.findByIdAndUpdate req.player._id
-                , { $push: { hand: card } }, (err, player) ->
-                  populateGame()
-                  socket.emit player._id, player
-        else
-          socket.emit 'alert', text: 'Your turn is over!'
-
-  socket.on 'discard', (req, callback) ->
-    console.log req.game
-    Game.findById req.game._id, (err, game) ->
-      console.log game
-      Player.findById req.player._id, (err, player) ->
-        # Remove card from player's hand and add it to the game.discarded.
-        game.discarded.push player.hand.splice(player.hand.indexOf(req.card), 1)
-        player.save (err, player) ->
-          socket.emit player._id, player
-          game.save (err, game) ->
+          player.drawFrom game[req.deck]
+          player.save -> socket.emit player._id, player
+          game.save ->
             socket.broadcast.emit game._id, game
             socket.emit game._id, game
+
+  socket.on 'discard', (req, callback) ->
+    Game.findById req.game._id, (err, game) ->
+      Player.findById req.player._id, (err, player) ->
+        player.discard req.card, game, ->
+          socket.emit player._id, player
+          socket.broadcast.emit game._id, game
+          socket.emit game._id, game
 
   socket.on 'sort hand', (req, callback) ->
     newPoints = 0

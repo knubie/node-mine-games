@@ -11,6 +11,11 @@ $ ->
       app.player.fetch (player) ->
         app.player.set player
 
+  socket.on 'score', ->
+    $('#hand').append "<div class='card gem emerald'></div>"
+    $('#hand').children().fadeOut ->
+      app.player.fetch (player) ->
+        app.player.set player
 
   Backbone.sync = (method, model, options) ->
     if method is 'create'
@@ -27,7 +32,6 @@ $ ->
     Game: class extends Backbone.Model
       initialize: ->
         socket.on @id, (game) =>
-          console.log 'got game broadcast'
           @set game
           app.view.mine.render()
       idAttribute: '_id'
@@ -41,29 +45,11 @@ $ ->
       initialize: ->
         @set 'hand', []
         socket.on @id, (player) =>
-          console.log 'got player broadcast'
-          console.log player
+          console.log 'player updated'
           @set player
+          console.log player
       idAttribute: '_id'
       name: 'player'
-      totalPoints: 0
-      points: ->
-        points = 0
-        value =
-          emerald: 1
-          ruby: 2
-          diamond: 3
-        count =
-          emerald: 0
-          ruby: 0
-          diamond: 0
-        for card in @get('hand')
-          points -= value[card]
-          count[card]++
-        points += parseInt(count.emerald/3)*3*2
-        points += parseInt(count.ruby/3)*6*2
-        points += parseInt(count.diamond/3)*9*2
-        return points
 
       sortHand: (hand) ->
         socket.emit 'sort hand',
@@ -97,13 +83,11 @@ $ ->
         app.game = new models.Game
         app.game.save {},
           success: ->
-            console.log app.game.get '_id'
             app.routes.navigate "games/#{app.game.id}",
               trigger: true # Trigger the routes event for this path.
 
     Game: class extends Backbone.View
       initialize: ->
-        console.log 'new game view'
         @hand = new views.Hand
         @hand.render()
         @discarded = new views.Discarded
@@ -128,7 +112,6 @@ $ ->
       template: $('#mine-template').html()
 
       render: ->
-        console.log 'render mine'
         @$el.html Mustache.render @template,
           mine: app.game.get('mine')
 
@@ -136,26 +119,23 @@ $ ->
         'click': 'draw'
       
       draw: ->
-        console.log 'drawing'
-        socket.emit 'draw mine',
+        socket.emit 'draw',
           game: app.game
           player: app.player
+          deck: 'mine'
 
     Hand: class extends Backbone.View
       initialize: ->
-        app.player.on 'change:hand', => @render()
+        app.player.on 'change', => @render()
         @$el.insertAfter '#game > #droppable-one'
         #$('#game').append @$el
 
       id: 'hand'
       template: $('#hand-template').html()
       render: ->
+        console.log 'render hand'
         @$el.html Mustache.render @template,
           hand: app.player.get('hand')
-          value:
-            emerald: 1
-            ruby: 3
-            diamond: 5
 
         #$('#hand').sortable()
 
@@ -190,7 +170,6 @@ $ ->
       initialize: ->
         app.game.on 'change:discarded', => @render()
         $('#droppable-one').append @$el
-        console.log app.game
 
       id: 'discarded'
       template: $('#discarded-template').html()
@@ -204,10 +183,11 @@ $ ->
         $('#hand').droppable
           accept: '#discarded > .card'
           drop: (e, ui) ->
-            console.log "Drew #{ui.draggable.attr('data-card')}"
-            socket.emit 'draw discarded'
+            socket.emit 'draw'
               game: app.game.attributes
               player: app.player.attributes
+              deck: 'discarded'
+
             #app.player.discard ui.draggable.attr('data-card')
 
         $('#droppable-two').droppable
@@ -217,7 +197,7 @@ $ ->
 
     Points: class extends Backbone.View
       initialize: ->
-        app.player.on 'change:hand', => @render()
+        app.player.on 'change:points', => @render()
         $('#info').prepend @$el
 
       id: 'points'
@@ -225,7 +205,7 @@ $ ->
       template: $('#points-template').html()
       render: ->
         @$el.html Mustache.render @template,
-          points: app.player.points()
+          points: app.player.get 'points'
 
     Players: class extends Backbone.View
       initialize: ->
