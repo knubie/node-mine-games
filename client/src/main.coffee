@@ -36,6 +36,9 @@ $ ->
           app.view.mine.render()
       idAttribute: '_id'
       name: 'game'
+      monster: ''
+      monsterHP: 0
+      log: []
       addPlayer: (player) ->
         socket.emit 'game add player',
           player: player
@@ -45,11 +48,11 @@ $ ->
       initialize: ->
         @set 'hand', []
         socket.on @id, (player) =>
-          console.log 'player updated'
           @set player
-          console.log player
       idAttribute: '_id'
       name: 'player'
+      points: 0
+      draws: 1
 
       sortHand: (hand) ->
         socket.emit 'sort hand',
@@ -61,6 +64,23 @@ $ ->
           game: app.game.attributes
           player: @
           card: card
+
+      play: (card) ->
+        socket.emit 'play'
+          game: app.game.attributes
+          player: @
+          card: card
+
+      buy: (card) ->
+        socket.emit 'buy'
+          game: app.game.attributes
+          player: @
+          card: card
+
+      endTurn: ->
+        socket.emit 'end turn'
+          game: app.game.attributes
+          player: @
 
   # Views
   # ============================================
@@ -90,14 +110,30 @@ $ ->
       initialize: ->
         @hand = new views.Hand
         @hand.render()
+
         @discarded = new views.Discarded
         @discarded.render()
+
+        @played = new views.Played
+        @played.render()
+
         @points = new views.Points
         @points.render()
+
+        @draws = new views.Draws
+        @draws.render()
+
         @players = new views.Players
         @players.render()
+
         @mine = new views.Mine
         @mine.render()
+
+        @shop = new views.Shop
+        @shop.render()
+
+        @log = new views.Log
+        @log.render()
 
       template: $('#game-template').html()
 
@@ -127,55 +163,79 @@ $ ->
     Hand: class extends Backbone.View
       initialize: ->
         app.player.on 'change', => @render()
-        @$el.insertAfter '#game > #droppable-one'
+        @$el.insertAfter '#game > #droppable-two'
         #$('#game').append @$el
 
       id: 'hand'
       template: $('#hand-template').html()
       render: ->
-        console.log 'render hand'
         @$el.html Mustache.render @template,
           hand: app.player.get('hand')
 
-        #$('#hand').sortable()
-
         $('#hand').children().draggable()
-          #connectToSortable: '#hand'
 
         $('#droppable-one').droppable
           accept: '#hand > .card'
           drop: (e, ui) ->
             app.player.discard ui.draggable.attr('data-card')
 
-        #$('#droppable-two').droppable
-          #drop: (e, ui) ->
-            #ui.draggable.css
-            #app.player.discard ui.draggable.attr('data-card')
+        $('#droppable-two').droppable
+          accept: '#hand > .card'
+          drop: (e, ui) ->
+            app.player.play ui.draggable.attr('data-card')
 
-        #--- sorting ---
-        #$('#hand').sortable
-          #update: ->
-            #hand = []
-            #$(this).children().each ->
-              #hand.push $(this).attr('data-card')
-            #app.player.sortHand hand
-        #--- stacking ---
-        #for card in ['emerald', 'ruby', 'diamond']
-          #top = 0
-          #$(".#{card}").each ->
-            #$(this).css 'top', top
-            #top += 5
+        $('#hand > .card').click ->
+          app.player.play $(this).attr('data-card')
+
+        $('#end-turn-button').click ->
+          app.player.endTurn()
+
+        $('#shop-button').click ->
+          console.log $('#container').css('-webkit-transform')
+          if $('#container').css('-webkit-transform') is 'matrix(1, 0, 0, 1, 110, 0)'
+            $('#container').css
+              '-webkit-transform': 'translateX(0)'
+          else
+            $('#container').css
+              '-webkit-transform': 'translateX(110px)'
+
+      events:
+        'click #end-turn': 'endTurn'
+
+      endTurn: ->
+        app.player.endTurn()
+
+    Played: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change:monster', => @render()
+        app.game.on 'change:monsterHP', => @render()
+        $('#droppable-two').append @$el
+
+      id: 'played'
+      template: $('#played-template').html()
+      render: ->
+        if app.game.get('monster')
+          @$el.html Mustache.render @template,
+            played: app.game.get('monster')
+            hp: app.game.get('monsterHP')
 
     Discarded: class extends Backbone.View
       initialize: ->
         app.game.on 'change:discarded', => @render()
+        @$el.addClass 'card'
         $('#droppable-one').append @$el
 
       id: 'discarded'
       template: $('#discarded-template').html()
       render: ->
         @$el.html Mustache.render @template,
-          discarded: app.game.get('discarded')
+          discarded: app.player.get('discarded')
+
+        $('#discarded').click ->
+          socket.emit 'draw'
+            game: app.game.attributes
+            player: app.player.attributes
+            deck: 'discarded'
 
         $('#discarded').children().draggable
           revert: 'invalid'
@@ -190,15 +250,16 @@ $ ->
 
             #app.player.discard ui.draggable.attr('data-card')
 
-        $('#droppable-two').droppable
-          drop: (e, ui) ->
-            ui.draggable.css
-            app.player.discard ui.draggable.attr('data-card')
+        #$('#droppable-two').droppable
+          #drop: (e, ui) ->
+            #ui.draggable.css
+            #app.player.discard ui.draggable.attr('data-card')
 
     Points: class extends Backbone.View
       initialize: ->
         app.player.on 'change:points', => @render()
-        $('#info').prepend @$el
+        #$('#info').prepend @$el
+        @$el.insertAfter '#shop-button'
 
       id: 'points'
 
@@ -206,6 +267,19 @@ $ ->
       render: ->
         @$el.html Mustache.render @template,
           points: app.player.get 'points'
+
+    Draws: class extends Backbone.View
+      initialize: ->
+        app.player.on 'change:draws', => @render()
+        #$('#info').prepend @$el
+        @$el.insertAfter '#shop-button'
+
+      id: 'draws'
+
+      template: $('#draws-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          draws: app.player.get 'draws'
 
     Players: class extends Backbone.View
       initialize: ->
@@ -218,6 +292,55 @@ $ ->
       render: ->
         @$el.html Mustache.render @template,
           players: app.game.get('players')
+
+    Shop: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change:shop', => @render()
+        @$el.insertAfter '#container'
+
+      id: 'shop'
+      template: $('#shop-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          shop: ['sword', 'axe', 'pickaxe', 'thief']
+
+      events:
+        'click .sword': 'buySword'
+        'click .axe': 'buyAxe'
+        'click .pickaxe': 'buyPickaxe'
+
+      buySword: ->
+        app.player.buy 'sword'
+
+      buyAxe: ->
+        app.player.buy 'axe'
+
+      buyPickaxe: ->
+        app.player.buy 'pickaxe'
+
+    Log: class extends Backbone.View
+      initialize: ->
+        app.game.on 'change:log', => @render()
+        @$el.insertAfter '#game'
+
+      id: 'log'
+      template: $('#log-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          log: app.game.get 'log'
+        @el.scrollTop = 9999
+
+        $('#chat').submit ->
+          socket.emit 'send message'
+            game: app.game
+            player: app.player
+            message: $('.message').val()
+
+      #events:
+        #'submit #chat': 'chat'
+
+      #chat: (e) ->
+        #e.preventDefault()
 
   # Routes
   # ============================================

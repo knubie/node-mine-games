@@ -1,20 +1,32 @@
 body {
   @import url(http://fonts.googleapis.com/css?family=Roboto+Condensed:400,700);
-  background-image: url(img/bg.jpg);
   font-size: 14px;
   font-family: Proxima Nova, sans-serif;
   margin: 0; }
+
+input {
+  box-sizing: border-box; }
 
 #home {
   text-align: center; }
   #home #new-game:hover {
     cursor: pointer; }
 
+#container {
+  width: 320px;
+  height: 480px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: url(img/bg.jpg);
+  z-index: 1;
+  -webkit-transition: -webkit-transform 0.5s; }
+
 .card {
   border: 2px solid white;
   box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
   border-radius: 5px;
-  width: 96px;
+  width: 95px;
   height: 126px;
   text-align: center;
   box-sizing: border-box;
@@ -22,9 +34,9 @@ body {
   text-transform: uppercase;
   -webkit-user-select: none;
   display: inline-block;
-  margin: 5px; }
+  margin: 5px 4px 5px 4px; }
 
-#mine {
+#mine, #discarded {
   background-image: url(img/mine.png);
   background-size: 177%;
   background-position: center;
@@ -32,6 +44,12 @@ body {
   color: #eeeeee;
   border: 2px solid #333333;
   display: inline-block; }
+
+#hand {
+  white-space: nowrap;
+  overflow-x: scroll;
+  height: 136px;
+  width: 100%; }
 
 #mine, #hand {
   position: relative; }
@@ -52,8 +70,29 @@ body {
 .diamond {
   background-image: url(img/diamond.png); }
 
+.rock {
+  background-image: url(img/rock.png); }
+
 .goblin {
-  background-image: url(img/ex.png); }
+  background-image: url(img/goblin.png); }
+
+.werewolf {
+  background-image: url(img/werewolf.png); }
+
+.triclops {
+  background-image: url(img/triclops.png); }
+
+.sword {
+  background-image: url(img/sword.png); }
+
+.axe {
+  background-image: url(img/axe.png); }
+
+.pickaxe {
+  background-image: url(img/pickaxe.png); }
+
+.thief {
+  background-image: url(img/thief1.png); }
 
 .card:active {
   -webkit-transform: translate(1px, 1px); }
@@ -66,16 +105,9 @@ body {
   margin-bottom: 10px;
   background-color: #eeeeee;
   box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
-  font-size: 28px; }
+  font-size: 18px; }
   #info div {
     display: inline-block; }
-  #info div:after {
-    content: "";
-    height: 100%;
-    display: inline-block;
-    border-right: 1px solid #dddddd;
-    border-left: 1px solid white;
-    margin: 0 10px; }
   #info img {
     margin-right: 10px; }
 
@@ -114,21 +146,71 @@ button:active {
 
 #droppable-one, #droppable-two {
   display: inline-block; }
-  #droppable-one #discarded, #droppable-two #discarded {
+  #droppable-one #discarded, #droppable-one #played, #droppable-two #discarded, #droppable-two #played {
     position: absolute;
     top: 0;
-    left: 106; }
-    #droppable-one #discarded .card, #droppable-two #discarded .card {
-      margin-right: -96px;
+    left: 104px; }
+    #droppable-one #discarded .card, #droppable-one #played .card, #droppable-two #discarded .card, #droppable-two #played .card {
+      margin-right: -99px;
       box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5); }
+  #droppable-one #played, #droppable-two #played {
+    left: 0; }
   #droppable-one .empty-card, #droppable-two .empty-card {
     border: 1px dashed #eeeeee;
     border-radius: 5px;
-    width: 96px;
+    width: 95px;
     height: 126px;
     box-sizing: border-box;
     padding-top: 50px;
     -webkit-user-select: none;
     display: inline-block;
-    margin: 5px;
+    margin: 5px 4px 5px 4px;
     position: relative; }
+
+#log {
+  position: absolute;
+  top: 359px;
+  bottom: 0;
+  width: 320px;
+  box-sizing: border-box;
+  overflow: scroll;
+  background-color: white;
+  color: #333333;
+  font-size: 16px;
+  padding: 10px; }
+
+#shop {
+  width: 110px;
+  box-sizing: border-box;
+  background-color: #333333;
+  padding-left: 4px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow: scroll; }
+
+.info-button {
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  padding: 4px;
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  border-bottom-color: #b3b3b3;
+  -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-image: linear-gradient(to bottom, #efefef, #dfdfdf);
+  background-repeat: repeat-x; }
+
+.info-button:hover {
+  cursor: pointer; }
+
+.disabled {
+  color: #cccccc; }
+
+#chat .message {
+  width: 100%; }
+
+input-placeholder {
+  color: #eeeeee; }
+
+p {
+  margin: 4px 0; }

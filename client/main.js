@@ -58,6 +58,12 @@
 
         _Class.prototype.name = 'game';
 
+        _Class.prototype.monster = '';
+
+        _Class.prototype.monsterHP = 0;
+
+        _Class.prototype.log = [];
+
         _Class.prototype.addPlayer = function(player) {
           return socket.emit('game add player', {
             player: player,
@@ -80,15 +86,17 @@
           var _this = this;
           this.set('hand', []);
           return socket.on(this.id, function(player) {
-            console.log('player updated');
-            _this.set(player);
-            return console.log(player);
+            return _this.set(player);
           });
         };
 
         _Class.prototype.idAttribute = '_id';
 
         _Class.prototype.name = 'player';
+
+        _Class.prototype.points = 0;
+
+        _Class.prototype.draws = 1;
 
         _Class.prototype.sortHand = function(hand) {
           return socket.emit('sort hand', {
@@ -102,6 +110,29 @@
             game: app.game.attributes,
             player: this,
             card: card
+          });
+        };
+
+        _Class.prototype.play = function(card) {
+          return socket.emit('play', {
+            game: app.game.attributes,
+            player: this,
+            card: card
+          });
+        };
+
+        _Class.prototype.buy = function(card) {
+          return socket.emit('buy', {
+            game: app.game.attributes,
+            player: this,
+            card: card
+          });
+        };
+
+        _Class.prototype.endTurn = function() {
+          return socket.emit('end turn', {
+            game: app.game.attributes,
+            player: this
           });
         };
 
@@ -159,12 +190,20 @@
           this.hand.render();
           this.discarded = new views.Discarded;
           this.discarded.render();
+          this.played = new views.Played;
+          this.played.render();
           this.points = new views.Points;
           this.points.render();
+          this.draws = new views.Draws;
+          this.draws.render();
           this.players = new views.Players;
           this.players.render();
           this.mine = new views.Mine;
-          return this.mine.render();
+          this.mine.render();
+          this.shop = new views.Shop;
+          this.shop.render();
+          this.log = new views.Log;
+          return this.log.render();
         };
 
         _Class.prototype.template = $('#game-template').html();
@@ -227,7 +266,7 @@
           app.player.on('change', function() {
             return _this.render();
           });
-          return this.$el.insertAfter('#game > #droppable-one');
+          return this.$el.insertAfter('#game > #droppable-two');
         };
 
         _Class.prototype.id = 'hand';
@@ -235,17 +274,83 @@
         _Class.prototype.template = $('#hand-template').html();
 
         _Class.prototype.render = function() {
-          console.log('render hand');
           this.$el.html(Mustache.render(this.template, {
             hand: app.player.get('hand')
           }));
           $('#hand').children().draggable();
-          return $('#droppable-one').droppable({
+          $('#droppable-one').droppable({
             accept: '#hand > .card',
             drop: function(e, ui) {
               return app.player.discard(ui.draggable.attr('data-card'));
             }
           });
+          $('#droppable-two').droppable({
+            accept: '#hand > .card',
+            drop: function(e, ui) {
+              return app.player.play(ui.draggable.attr('data-card'));
+            }
+          });
+          $('#hand > .card').click(function() {
+            return app.player.play($(this).attr('data-card'));
+          });
+          $('#end-turn-button').click(function() {
+            return app.player.endTurn();
+          });
+          return $('#shop-button').click(function() {
+            console.log($('#container').css('-webkit-transform'));
+            if ($('#container').css('-webkit-transform') === 'matrix(1, 0, 0, 1, 110, 0)') {
+              return $('#container').css({
+                '-webkit-transform': 'translateX(0)'
+              });
+            } else {
+              return $('#container').css({
+                '-webkit-transform': 'translateX(110px)'
+              });
+            }
+          });
+        };
+
+        _Class.prototype.events = {
+          'click #end-turn': 'endTurn'
+        };
+
+        _Class.prototype.endTurn = function() {
+          return app.player.endTurn();
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Played: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:monster', function() {
+            return _this.render();
+          });
+          app.game.on('change:monsterHP', function() {
+            return _this.render();
+          });
+          return $('#droppable-two').append(this.$el);
+        };
+
+        _Class.prototype.id = 'played';
+
+        _Class.prototype.template = $('#played-template').html();
+
+        _Class.prototype.render = function() {
+          if (app.game.get('monster')) {
+            return this.$el.html(Mustache.render(this.template, {
+              played: app.game.get('monster'),
+              hp: app.game.get('monsterHP')
+            }));
+          }
         };
 
         return _Class;
@@ -264,6 +369,7 @@
           app.game.on('change:discarded', function() {
             return _this.render();
           });
+          this.$el.addClass('card');
           return $('#droppable-one').append(this.$el);
         };
 
@@ -273,12 +379,19 @@
 
         _Class.prototype.render = function() {
           this.$el.html(Mustache.render(this.template, {
-            discarded: app.game.get('discarded')
+            discarded: app.player.get('discarded')
           }));
+          $('#discarded').click(function() {
+            return socket.emit('draw', {
+              game: app.game.attributes,
+              player: app.player.attributes,
+              deck: 'discarded'
+            });
+          });
           $('#discarded').children().draggable({
             revert: 'invalid'
           });
-          $('#hand').droppable({
+          return $('#hand').droppable({
             accept: '#discarded > .card',
             drop: function(e, ui) {
               return socket.emit('draw', {
@@ -286,12 +399,6 @@
                 player: app.player.attributes,
                 deck: 'discarded'
               });
-            }
-          });
-          return $('#droppable-two').droppable({
-            drop: function(e, ui) {
-              ui.draggable.css;
-              return app.player.discard(ui.draggable.attr('data-card'));
             }
           });
         };
@@ -312,7 +419,7 @@
           app.player.on('change:points', function() {
             return _this.render();
           });
-          return $('#info').prepend(this.$el);
+          return this.$el.insertAfter('#shop-button');
         };
 
         _Class.prototype.id = 'points';
@@ -322,6 +429,35 @@
         _Class.prototype.render = function() {
           return this.$el.html(Mustache.render(this.template, {
             points: app.player.get('points')
+          }));
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Draws: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.player.on('change:draws', function() {
+            return _this.render();
+          });
+          return this.$el.insertAfter('#shop-button');
+        };
+
+        _Class.prototype.id = 'draws';
+
+        _Class.prototype.template = $('#draws-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            draws: app.player.get('draws')
           }));
         };
 
@@ -352,6 +488,90 @@
           return this.$el.html(Mustache.render(this.template, {
             players: app.game.get('players')
           }));
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Shop: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:shop', function() {
+            return _this.render();
+          });
+          return this.$el.insertAfter('#container');
+        };
+
+        _Class.prototype.id = 'shop';
+
+        _Class.prototype.template = $('#shop-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            shop: ['sword', 'axe', 'pickaxe', 'thief']
+          }));
+        };
+
+        _Class.prototype.events = {
+          'click .sword': 'buySword',
+          'click .axe': 'buyAxe',
+          'click .pickaxe': 'buyPickaxe'
+        };
+
+        _Class.prototype.buySword = function() {
+          return app.player.buy('sword');
+        };
+
+        _Class.prototype.buyAxe = function() {
+          return app.player.buy('axe');
+        };
+
+        _Class.prototype.buyPickaxe = function() {
+          return app.player.buy('pickaxe');
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Log: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.game.on('change:log', function() {
+            return _this.render();
+          });
+          return this.$el.insertAfter('#game');
+        };
+
+        _Class.prototype.id = 'log';
+
+        _Class.prototype.template = $('#log-template').html();
+
+        _Class.prototype.render = function() {
+          this.$el.html(Mustache.render(this.template, {
+            log: app.game.get('log')
+          }));
+          this.el.scrollTop = 9999;
+          return $('#chat').submit(function() {
+            return socket.emit('send message', {
+              game: app.game,
+              player: app.player,
+              message: $('.message').val()
+            });
+          });
         };
 
         return _Class;
