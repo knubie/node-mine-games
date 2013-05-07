@@ -10,30 +10,12 @@
     };
     hand = [];
     socket = io.connect(app.url);
-    socket.on("alert", function(message) {
-      return alert(message.text);
-    });
-    socket.on('bust', function() {
-      $('#hand').append("<div class='card gem goblin'></div>");
-      return $('#hand').children().fadeOut(function() {
-        return app.player.fetch(function(player) {
-          return app.player.set(player);
-        });
-      });
-    });
-    socket.on('score', function() {
-      $('#hand').append("<div class='card gem emerald'></div>");
-      return $('#hand').children().fadeOut(function() {
-        return app.player.fetch(function(player) {
-          return app.player.set(player);
-        });
-      });
-    });
     Backbone.sync = function(method, model, options) {
       if (method === 'create') {
         socket.emit("create " + model.name, model, options.success);
       }
       if (method === 'read') {
+        console.log("reading " + model.name);
         return socket.emit("read " + model.name, model.id, options.success);
       }
     };
@@ -194,6 +176,8 @@
           this.played.render();
           this.points = new views.Points;
           this.points.render();
+          this.plays = new views.Plays;
+          this.plays.render();
           this.draws = new views.Draws;
           this.draws.render();
           this.players = new views.Players;
@@ -203,10 +187,32 @@
           this.shop = new views.Shop;
           this.shop.render();
           this.log = new views.Log;
-          return this.log.render();
+          this.log.render();
+          return this.$el = $('#container');
         };
 
         _Class.prototype.template = $('#game-template').html();
+
+        _Class.prototype.events = {
+          'click #end-turn-button': 'endTurn',
+          'click #shop-button': 'toggleShop'
+        };
+
+        _Class.prototype.endTurn = function() {
+          return app.player.endTurn();
+        };
+
+        _Class.prototype.toggleShop = function() {
+          if ($('#container').css('-webkit-transform') === 'matrix(1, 0, 0, 1, 110, 0)') {
+            return $('#container').css({
+              '-webkit-transform': 'translateX(0)'
+            });
+          } else {
+            return $('#container').css({
+              '-webkit-transform': 'translateX(110px)'
+            });
+          }
+        };
 
         return _Class;
 
@@ -284,34 +290,20 @@
               return app.player.discard(ui.draggable.attr('data-card'));
             }
           });
-          $('#droppable-two').droppable({
+          return $('#droppable-two').droppable({
             accept: '#hand > .card',
             drop: function(e, ui) {
               return app.player.play(ui.draggable.attr('data-card'));
             }
           });
-          $('#hand > .card').click(function() {
-            return app.player.play($(this).attr('data-card'));
-          });
-          $('#end-turn-button').click(function() {
-            return app.player.endTurn();
-          });
-          return $('#shop-button').click(function() {
-            console.log($('#container').css('-webkit-transform'));
-            if ($('#container').css('-webkit-transform') === 'matrix(1, 0, 0, 1, 110, 0)') {
-              return $('#container').css({
-                '-webkit-transform': 'translateX(0)'
-              });
-            } else {
-              return $('#container').css({
-                '-webkit-transform': 'translateX(110px)'
-              });
-            }
-          });
         };
 
         _Class.prototype.events = {
-          'click #end-turn': 'endTurn'
+          'click .card': 'play'
+        };
+
+        _Class.prototype.play = function(e) {
+          return app.player.play($(e.currentTarget).attr('data-card'));
         };
 
         _Class.prototype.endTurn = function() {
@@ -346,10 +338,13 @@
 
         _Class.prototype.render = function() {
           if (app.game.get('monster')) {
+            $('#droppable-two').append(this.$el);
             return this.$el.html(Mustache.render(this.template, {
               played: app.game.get('monster'),
               hp: app.game.get('monsterHP')
             }));
+          } else {
+            return $('#played').remove();
           }
         };
 
@@ -429,6 +424,35 @@
         _Class.prototype.render = function() {
           return this.$el.html(Mustache.render(this.template, {
             points: app.player.get('points')
+          }));
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Plays: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          app.player.on('change:plays', function() {
+            return _this.render();
+          });
+          return this.$el.insertAfter('#shop-button');
+        };
+
+        _Class.prototype.id = 'plays';
+
+        _Class.prototype.template = $('#plays-template').html();
+
+        _Class.prototype.render = function() {
+          return this.$el.html(Mustache.render(this.template, {
+            plays: app.player.get('plays')
           }));
         };
 
@@ -520,21 +544,11 @@
         };
 
         _Class.prototype.events = {
-          'click .sword': 'buySword',
-          'click .axe': 'buyAxe',
-          'click .pickaxe': 'buyPickaxe'
+          'click .card': 'buy'
         };
 
-        _Class.prototype.buySword = function() {
-          return app.player.buy('sword');
-        };
-
-        _Class.prototype.buyAxe = function() {
-          return app.player.buy('axe');
-        };
-
-        _Class.prototype.buyPickaxe = function() {
-          return app.player.buy('pickaxe');
+        _Class.prototype.buy = function(e) {
+          return app.player.buy($(e.currentTarget).attr('data-card'));
         };
 
         return _Class;

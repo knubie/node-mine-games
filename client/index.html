@@ -22,8 +22,11 @@
     <script id="mine-template">Mine ({{mine.length}})</script>
     <script id="players-template">{{#players}}{{name}} {{/players}}</script>
     <script id="points-template">
-      <img height="21" src="img/gem-icon.png" width="19" />{{points}}</script>
-    <script id="draws-template">draws: {{draws}}</script>
+      <img height="19" src="img/gem-icon.png" width="17" />{{points}}</script>
+    <script id="plays-template">
+      <img src="img/play.png" />{{plays}}</script>
+    <script id="draws-template">
+      <img src="img/draw.png" />{{draws}}</script>
     <script id="hand-template">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/hand}}</script>
     <script id="log-template">{{#log}}<p>{{.}}</p>{{/log}}<form id="chat">
         <input class="message" placeholder="Send message.." type="text" />

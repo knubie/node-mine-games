@@ -4,16 +4,45 @@ Schema = mongoose.Schema
 
 # Schemas
 exports.gameSchema = new Schema
+  mine        : Array
+  discarded   : Array
+  log         : Array
+  monster     : String
+  monsterHP   : Number
+  monsterLoot : Array
   players: [
     type: Schema.Types.ObjectId
     ref: 'Player'
   ]
-  mine: Array
-  discarded: Array
-  log: Array
-  monster: String
-  monsterHP: Number
-  monsterLoot: Array
+
+exports.gameSchema.method
+  deal: ->
+    @players = []
+    @discarded = []
+    @log = ['Creating new game.']
+    @mine = do ->
+      mine1 = []
+      mine2 = []
+      mine3 = []
+      mine1.push('emerald') for [1..5]
+      mine1.push('ruby') for [1..4]
+      mine1.push('diamond') for [1..2]
+      mine1.push('goblin') for [1..5]
+
+      mine2.push('emerald') for [1..4]
+      mine2.push('ruby') for [1..5]
+      mine2.push('diamond') for [1..2]
+      mine2.push('werewolf') for [1..5]
+
+      mine3.push('emerald') for [1..2]
+      mine3.push('ruby') for [1..4]
+      mine3.push('diamond') for [1..5]
+      mine3.push('triclops') for [1..5]
+
+      mine1 = mine1.randomize()
+      mine2 = mine2.randomize()
+      mine3 = mine3.randomize()
+      return mine3.concat mine2, mine1
 
 exports.deckSchema = new Schema
   player:
@@ -22,37 +51,40 @@ exports.deckSchema = new Schema
   cards: Array
 
 exports.playerSchema = new Schema
-  name: String
-  hand: Array
-  discarded: Array
-  points: Number
-  draws: Number
+  name      : String
+  hand      : Array
+  discarded : Array
+  points    : Number
+  draws     : Number
+  plays     : Number
+  turn      : Boolean
   decks: [
     type: Schema.Types.ObjectId
     ref: 'Deck'
   ]
-  turn: Boolean
 
 exports.playerSchema.method
   drawFrom: (deck) ->
     #@draws--
     if deck.length > 0 then @hand.push deck.pop()
 
-  discard: (card, game, cb) ->
+  discard: (card, cb) ->
     gem =
       emerald: true
       ruby: true
       diamond: true
 
-    #if gem[card]
-      #@hand.splice(@hand.indexOf(card), 1)
-    #else
     @discarded.push @hand.splice(@hand.indexOf(card), 1)
     @discarded = @discarded.randomize()
 
-    @save -> game.save -> cb()
+    @save -> cb()
 
   play: (card, game, cb) ->
+    gem =
+      emerald: true
+      ruby: true
+      diamond: true
+
     attack = (dmg) =>
       if game.monsterHP > 0
         game.monsterHP -= dmg
@@ -75,6 +107,7 @@ exports.playerSchema.method
       axe: => attack(10)
 
     cards[card]()
+    unless gem[card]
+      @plays--
     game.log.push "#{@name} played a #{card}."
     @save -> game.save -> cb()
-

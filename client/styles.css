@@ -14,7 +14,7 @@ input {
 
 #container {
   width: 320px;
-  height: 480px;
+  height: 100%;
   position: absolute;
   top: 0;
   left: 0;
@@ -109,7 +109,10 @@ input {
   #info div {
     display: inline-block; }
   #info img {
-    margin-right: 10px; }
+    margin-right: 4px;
+    margin-bottom: -3px; }
+  #info #draws, #info #plays, #info #points {
+    margin: 0 0 0 22px; }
 
 .button {
   display: inline-block;
@@ -189,6 +192,9 @@ button:active {
   bottom: 0;
   left: 0;
   overflow: scroll; }
+
+#end-turn-button {
+  float: right; }
 
 .info-button {
   border: 1px solid #cccccc;

@@ -4,24 +4,12 @@ $ ->
   hand = []
   socket = io.connect(app.url)
 
-  socket.on "alert", (message) -> alert message.text
-  socket.on 'bust', ->
-    $('#hand').append "<div class='card gem goblin'></div>"
-    $('#hand').children().fadeOut ->
-      app.player.fetch (player) ->
-        app.player.set player
-
-  socket.on 'score', ->
-    $('#hand').append "<div class='card gem emerald'></div>"
-    $('#hand').children().fadeOut ->
-      app.player.fetch (player) ->
-        app.player.set player
-
   Backbone.sync = (method, model, options) ->
     if method is 'create'
       socket.emit "create #{model.name}", model, options.success
 
     if method is 'read'
+      console.log "reading #{model.name}"
       socket.emit "read #{model.name}", model.id, options.success
 
   # Models / Collections
@@ -40,7 +28,7 @@ $ ->
       monsterHP: 0
       log: []
       addPlayer: (player) ->
-        socket.emit 'game add player',
+        socket.emit 'game add player'
           player: player
           game: @
 
@@ -120,6 +108,9 @@ $ ->
         @points = new views.Points
         @points.render()
 
+        @plays = new views.Plays
+        @plays.render()
+
         @draws = new views.Draws
         @draws.render()
 
@@ -135,7 +126,24 @@ $ ->
         @log = new views.Log
         @log.render()
 
+        @$el = $('#container')
+
       template: $('#game-template').html()
+
+      events:
+        'click #end-turn-button': 'endTurn'
+        'click #shop-button': 'toggleShop'
+
+      endTurn: ->
+        app.player.endTurn()
+
+      toggleShop: ->
+        if $('#container').css('-webkit-transform') is 'matrix(1, 0, 0, 1, 110, 0)'
+          $('#container').css
+            '-webkit-transform': 'translateX(0)'
+        else
+          $('#container').css
+            '-webkit-transform': 'translateX(110px)'
 
     Mine: class extends Backbone.View
       initialize: ->
@@ -184,23 +192,11 @@ $ ->
           drop: (e, ui) ->
             app.player.play ui.draggable.attr('data-card')
 
-        $('#hand > .card').click ->
-          app.player.play $(this).attr('data-card')
-
-        $('#end-turn-button').click ->
-          app.player.endTurn()
-
-        $('#shop-button').click ->
-          console.log $('#container').css('-webkit-transform')
-          if $('#container').css('-webkit-transform') is 'matrix(1, 0, 0, 1, 110, 0)'
-            $('#container').css
-              '-webkit-transform': 'translateX(0)'
-          else
-            $('#container').css
-              '-webkit-transform': 'translateX(110px)'
-
       events:
-        'click #end-turn': 'endTurn'
+        'click .card': 'play'
+
+      play: (e) ->
+        app.player.play $(e.currentTarget).attr('data-card')
 
       endTurn: ->
         app.player.endTurn()
@@ -215,9 +211,12 @@ $ ->
       template: $('#played-template').html()
       render: ->
         if app.game.get('monster')
+          $('#droppable-two').append @$el
           @$el.html Mustache.render @template,
             played: app.game.get('monster')
             hp: app.game.get('monsterHP')
+        else
+          $('#played').remove()
 
     Discarded: class extends Backbone.View
       initialize: ->
@@ -258,7 +257,6 @@ $ ->
     Points: class extends Backbone.View
       initialize: ->
         app.player.on 'change:points', => @render()
-        #$('#info').prepend @$el
         @$el.insertAfter '#shop-button'
 
       id: 'points'
@@ -267,6 +265,18 @@ $ ->
       render: ->
         @$el.html Mustache.render @template,
           points: app.player.get 'points'
+
+    Plays: class extends Backbone.View
+      initialize: ->
+        app.player.on 'change:plays', => @render()
+        @$el.insertAfter '#shop-button'
+
+      id: 'plays'
+
+      template: $('#plays-template').html()
+      render: ->
+        @$el.html Mustache.render @template,
+          plays: app.player.get 'plays'
 
     Draws: class extends Backbone.View
       initialize: ->
@@ -305,18 +315,10 @@ $ ->
           shop: ['sword', 'axe', 'pickaxe', 'thief']
 
       events:
-        'click .sword': 'buySword'
-        'click .axe': 'buyAxe'
-        'click .pickaxe': 'buyPickaxe'
+        'click .card': 'buy'
 
-      buySword: ->
-        app.player.buy 'sword'
-
-      buyAxe: ->
-        app.player.buy 'axe'
-
-      buyPickaxe: ->
-        app.player.buy 'pickaxe'
+      buy: (e) ->
+        app.player.buy $(e.currentTarget).attr('data-card')
 
     Log: class extends Backbone.View
       initialize: ->
@@ -329,12 +331,13 @@ $ ->
         @$el.html Mustache.render @template,
           log: app.game.get 'log'
         @el.scrollTop = 9999
+        #TODO: keep focus on chat
 
         $('#chat').submit ->
           socket.emit 'send message'
-            game: app.game
-            player: app.player
-            message: $('.message').val()
+            game    : app.game
+            player  : app.player
+            message : $('.message').val()
 
       #events:
         #'submit #chat': 'chat'

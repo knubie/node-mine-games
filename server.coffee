@@ -13,33 +13,8 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'create game', (model, callback) ->
     console.log 'Creating new Game.'
     game = new Game
-      players: []
-      discarded: []
-      log: ['Creating new game.']
-      mine: do ->
-        mine1 = []
-        mine2 = []
-        mine3 = []
-        mine1.push('emerald') for [1..5]
-        mine1.push('ruby') for [1..4]
-        mine1.push('diamond') for [1..2]
-        mine1.push('goblin') for [1..5]
-
-        mine2.push('emerald') for [1..4]
-        mine2.push('ruby') for [1..5]
-        mine2.push('diamond') for [1..2]
-        mine2.push('werewolf') for [1..5]
-
-        mine3.push('emerald') for [1..2]
-        mine3.push('ruby') for [1..4]
-        mine3.push('diamond') for [1..5]
-        mine3.push('triclops') for [1..5]
-
-        mine1 = mine1.randomize()
-        mine2 = mine2.randomize()
-        mine3 = mine3.randomize()
-        return mine3.concat mine2, mine1
-
+    game.deal()
+    console.log game.log
     game.save (err) ->
       callback game
 
@@ -48,21 +23,14 @@ io.sockets.on 'connection', (socket) ->
       callback game
 
   socket.on 'game add player', (req, callback) ->
-    #TODO: limit players to four
-    populateGame = ->
-      Game
-        .findById(req.game._id)
-        .populate('players')
-        .exec (err, game) ->
-          socket.broadcast.emit game.id, game
-          socket.emit game.id, game
-
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
-        ps = game.players
-        if ps.indexOf(player._id) is -1
-          ps.push player._id
+        if game.players.length <= 4 and game.players.indexOf(player._id) is -1
+          game.players.push player._id
+          game.log.push "#{player.name} joined the game."
           player.hand = []
+          player.plays = 1
+          player.points = 0
           player.discarded = do ->
             deck = []
             deck.push('emerald') for [1..4]
@@ -70,15 +38,10 @@ io.sockets.on 'connection', (socket) ->
             return deck.randomize()
           player.drawFrom(player.discarded) for [1..3]
           player.draws = 1
-          player.save ->
-            socket.emit player._id, player
-            game.update
-              players: ps
-              $push: {log: "#{player.name} joined the game."}
-            , ->
-              populateGame()
-        else
-          populateGame()
+        game.save -> player.save ->
+          socket.broadcast.emit game.id, game
+          socket.emit game.id, game
+          socket.emit player._id, player
 
   socket.on 'create player', (model, callback) ->
     player = new Player
@@ -113,7 +76,7 @@ io.sockets.on 'connection', (socket) ->
 
           if player.hand.last() is 'goblin'
             game.monster = player.hand.last()
-            game.monsterHP = 50
+            game.monsterHP = 20
             player.hand.pop()
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
@@ -121,7 +84,7 @@ io.sockets.on 'connection', (socket) ->
             game.log.push "The Goblin stole a card from #{player.name}'s hand."
           if player.hand.last() is 'werewolf'
             game.monster = player.hand.last()
-            game.monsterHP = 75
+            game.monsterHP = 40
             player.hand.pop()
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
@@ -129,7 +92,7 @@ io.sockets.on 'connection', (socket) ->
             game.log.push 'A Werewolf appears!'
           if player.hand.last() is 'triclops'
             game.monster = player.hand.last()
-            game.monsterHP = 100
+            game.monsterHP = 80
             player.hand.pop()
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
@@ -151,7 +114,7 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'play', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
-        player.discard req.card, game, ->
+        player.discard req.card, ->
           player.play req.card, game, ->
             socket.emit player._id, player
             socket.broadcast.emit game._id, game
@@ -172,12 +135,14 @@ io.sockets.on 'connection', (socket) ->
           socket.emit player._id, player
 
   socket.on 'end turn', (req, callback) ->
+    console.log 'endin turn'
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if player.turn
           game.log.push "#{player.name} ended his turn."
           player.turn = false
           player.draws = 1
+          player.points = 0
           draws = 3 - player.hand.length
           if draws > 0
             player.drawFrom player.discarded for [1..draws]
@@ -189,11 +154,12 @@ io.sockets.on 'connection', (socket) ->
               position = 0
             Player.findById game.players[position], (err, player) ->
               player.turn = true
+              player.plays = 1
               if game.monster
+                console.log 'stealin loot'
                 game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
                 game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
               game.save -> player.save ->
-                socket.broadcast.emit player._id, player
                 socket.emit player._id, player
                 socket.broadcast.emit game._id, game
                 socket.emit game._id, game
@@ -218,7 +184,7 @@ io.sockets.on 'connection', (socket) ->
         game.log.push "#{player.name}: #{req.message}"
         game.save ->
           socket.broadcast.emit game.id, game
-          socket.emit game._id, game
+          socket.emit game.id, game
 
 
 
