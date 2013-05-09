@@ -1,7 +1,7 @@
 {
   "name": "mine-games",
   "version": "0.0.1",
-  dependencies": {
+  "dependencies": {
     "express": "3.2.x",
     "mongoose": "3.6.x",
     "socket.io": "0.9.x",
