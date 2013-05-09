@@ -131,13 +131,30 @@
           return _Class.__super__.constructor.apply(this, arguments);
         }
 
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          console.log(app.player);
+          return app.player.on('change:name', function() {
+            return _this.render();
+          });
+        };
+
         _Class.prototype.id = 'home';
 
         _Class.prototype.template = $('#home-template').html();
 
         _Class.prototype.render = function() {
-          this.$el.html(Mustache.render(this.template));
+          this.$el.html(Mustache.render(this.template, {
+            name: app.player.get('name')
+          }));
           $('#container').append(this.$el);
+          $('#name').submit(function(e) {
+            e.preventDefault();
+            return socket.emit('change name', {
+              player: app.player,
+              name: $('.name').val()
+            });
+          });
           return this;
         };
 
@@ -227,7 +244,7 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          app.game.on('change', function() {
+          app.game.on('change:mine', function() {
             return _this.render;
           });
           this.$el.addClass('card');
@@ -239,6 +256,7 @@
         _Class.prototype.template = $('#mine-template').html();
 
         _Class.prototype.render = function() {
+          console.log(app.game);
           return this.$el.html(Mustache.render(this.template, {
             mine: app.game.get('mine')
           }));
@@ -579,7 +597,8 @@
             log: app.game.get('log')
           }));
           this.el.scrollTop = 9999;
-          return $('#chat').submit(function() {
+          return $('#chat').submit(function(e) {
+            e.preventDefault();
             return socket.emit('send message', {
               game: app.game,
               player: app.player,
@@ -606,11 +625,34 @@
       };
 
       Routes.prototype.home = function() {
-        if (app.view != null) {
-          app.view.remove();
+        app.player = new models.Player({
+          _id: sessionStorage.getItem('player id') || null
+        });
+        if (app.player.isNew()) {
+          return app.player.save({}, {
+            success: function() {
+              sessionStorage.setItem('player id', app.player.id);
+              app.player = new models.Player({
+                _id: app.player.id
+              });
+              if (app.view != null) {
+                app.view.remove();
+              }
+              app.view = new views.Home;
+              return app.view.render();
+            }
+          });
+        } else {
+          return app.player.fetch({
+            success: function() {
+              if (app.view != null) {
+                app.view.remove();
+              }
+              app.view = new views.Home;
+              return app.view.render();
+            }
+          });
         }
-        app.view = new views.Home;
-        return app.view.render();
       };
 
       Routes.prototype.showGame = function(id) {

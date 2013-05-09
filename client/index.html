@@ -17,6 +17,9 @@
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="main.js"></script>
     <script id="home-template">
+      <form id="name">
+        <input class="name" placeholder="{{name}}" type="text" />
+      </form>
       <div class="button" id="new-game">New Game</div>
     </script>
     <script id="mine-template">Mine ({{mine.length}})</script>

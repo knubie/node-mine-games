@@ -16,7 +16,10 @@ html
     script src="mustache.js"
     script src="http://localhost:3000/socket.io/socket.io.js"
     script src="main.js"
+
     script id="home-template"
+      form id="name"
+        input class="name" type="text" placeholder="{{name}}"
       #new-game.button
         | New Game
 

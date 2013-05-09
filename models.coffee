@@ -66,18 +66,11 @@ exports.playerSchema = new Schema
 exports.playerSchema.method
   drawFrom: (deck) ->
     #@draws--
-    if deck.length > 0 then @hand.push deck.pop()
+    if deck.length > 0 then @hand.unshift deck.pop()
 
-  discard: (card, cb) ->
-    gem =
-      emerald: true
-      ruby: true
-      diamond: true
-
+  discard: (card) ->
     @discarded.push @hand.splice(@hand.indexOf(card), 1)
     @discarded = @discarded.randomize()
-
-    @save -> cb()
 
   play: (card, game, cb) ->
     gem =
@@ -88,15 +81,17 @@ exports.playerSchema.method
     attack = (dmg) =>
       if game.monsterHP > 0
         game.monsterHP -= dmg
+        game.log.push "The #{game.monster} takes #{dmg} points of damage."
         if game.monsterHP <= 0
           game.monsterHP = 0
           game.monster = ''
 
           #@hand.add game.monsterLoot
           @hand = @hand.concat game.monsterLoot
+          game.log.push "#{@name} defeats the #{game.monster} and collects its loot."
           game.monsterLoot = []
 
-    cards =
+    play =
     # Gems
       emerald: => @points += 1
       ruby: => @points += 2
@@ -106,8 +101,11 @@ exports.playerSchema.method
       sword: => attack(5)
       axe: => attack(10)
 
-    cards[card]()
-    unless gem[card]
-      @plays--
-    game.log.push "#{@name} played a #{card}."
+    if gem[card] or @plays > 0 # If card is a gem
+      console.log "discarding, points: #{@points}"
+      @discard card
+      play[card]()
+      @plays-- if not gem[card]
+      game.log.push "#{@name} played a #{card}."
+
     @save -> game.save -> cb()

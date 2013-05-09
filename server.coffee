@@ -26,7 +26,8 @@ io.sockets.on 'connection', (socket) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if game.players.length <= 4 and game.players.indexOf(player._id) is -1
-          game.players.push player._id
+          game.players.push player
+          console.log game
           game.log.push "#{player.name} joined the game."
           player.hand = []
           player.plays = 1
@@ -38,10 +39,12 @@ io.sockets.on 'connection', (socket) ->
             return deck.randomize()
           player.drawFrom(player.discarded) for [1..3]
           player.draws = 1
-        game.save -> player.save ->
-          socket.broadcast.emit game.id, game
-          socket.emit game.id, game
-          socket.emit player._id, player
+        #Game.findById(req.game._id).populate 'players', (err, game) ->
+        game.populate 'players', (err, game) ->
+          game.save -> player.save ->
+            socket.broadcast.emit game.id, game
+            socket.emit game.id, game
+            socket.emit player._id, player
 
   socket.on 'create player', (model, callback) ->
     player = new Player
@@ -74,26 +77,26 @@ io.sockets.on 'connection', (socket) ->
           else
             game.log.push "#{player.name} drew a card from their deck."
 
-          if player.hand.last() is 'goblin'
-            game.monster = player.hand.last()
+          if player.hand[0] is 'goblin'
+            game.monster = player.hand[0]
             game.monsterHP = 20
-            player.hand.pop()
+            player.hand.splice(0, 1)
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
             game.log.push 'A Goblin appears!'
             game.log.push "The Goblin stole a card from #{player.name}'s hand."
-          if player.hand.last() is 'werewolf'
-            game.monster = player.hand.last()
+          if player.hand[0] is 'werewolf'
+            game.monster = player.hand[0]
             game.monsterHP = 40
-            player.hand.pop()
+            player.hand.splice(0,1)
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
             game.log.push "The Werewolf stole a card from #{player.name}'s hand."
             game.log.push 'A Werewolf appears!'
-          if player.hand.last() is 'triclops'
-            game.monster = player.hand.last()
+          if player.hand[0] is 'triclops'
+            game.monster = player.hand[0]
             game.monsterHP = 80
-            player.hand.pop()
+            player.hand.splice(0,1)
             player.draw++
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
             game.log.push 'A Triclops appears!'
@@ -114,7 +117,7 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'play', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
-        player.discard req.card, ->
+        if player.turn
           player.play req.card, game, ->
             socket.emit player._id, player
             socket.broadcast.emit game._id, game
@@ -185,6 +188,12 @@ io.sockets.on 'connection', (socket) ->
         game.save ->
           socket.broadcast.emit game.id, game
           socket.emit game.id, game
+
+  socket.on 'change name', (req, callback) ->
+    Player.findById req.player._id, (err, player) ->
+      player.name = req.name
+      player.save -> socket.emit player.id, player
+
 
 
 

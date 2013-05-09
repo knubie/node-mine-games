@@ -76,12 +76,21 @@ $ ->
   views =
 
     Home: class extends Backbone.View
+      initialize: ->
+        console.log app.player
+        app.player.on 'change:name', => @render()
       id: 'home'
       template: $('#home-template').html()
 
       render: ->
-        @$el.html Mustache.render @template
+        @$el.html Mustache.render @template,
+          name: app.player.get('name')
         $('#container').append @$el
+        $('#name').submit (e) ->
+          e.preventDefault()
+          socket.emit 'change name'
+            player: app.player
+            name  : $('.name').val()
         return @
 
       events:
@@ -147,7 +156,7 @@ $ ->
 
     Mine: class extends Backbone.View
       initialize: ->
-        app.game.on 'change', => @render
+        app.game.on 'change:mine', => @render
         @$el.addClass 'card'
         @$el.insertBefore '#game > #droppable-one'
         #$('#game').prepend @$el
@@ -156,6 +165,7 @@ $ ->
       template: $('#mine-template').html()
 
       render: ->
+        console.log app.game
         @$el.html Mustache.render @template,
           mine: app.game.get('mine')
 
@@ -333,7 +343,8 @@ $ ->
         @el.scrollTop = 9999
         #TODO: keep focus on chat
 
-        $('#chat').submit ->
+        $('#chat').submit (e) ->
+          e.preventDefault()
           socket.emit 'send message'
             game    : app.game
             player  : app.player
@@ -354,9 +365,23 @@ $ ->
       'games/:id': 'showGame'
 
     home: ->
-      app.view.remove() if app.view?
-      app.view = new views.Home
-      app.view.render()
+      app.player = new models.Player
+        _id: sessionStorage.getItem('player id') or null
+      if app.player.isNew()
+        app.player.save {}, success: ->
+          sessionStorage.setItem 'player id', app.player.id
+          app.player = new models.Player # Create model to update socket.on
+            _id: app.player.id
+
+          app.view.remove() if app.view?
+          app.view = new views.Home
+          app.view.render()
+      else
+        app.player.fetch success: ->
+          app.view.remove() if app.view?
+          app.view = new views.Home
+          app.view.render()
+
 
     showGame: (id) ->
       app.view.remove() if app.view?
@@ -365,7 +390,7 @@ $ ->
         app.game = new models.Game
           _id: id
         app.view = new views.Game
-        app.game.addPlayer app.player
+        app.game.addPlayer app.player # Returns game model from server
 
       app.player = new models.Player
         _id: sessionStorage.getItem('player id') or null
