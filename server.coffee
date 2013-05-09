@@ -27,6 +27,7 @@ io.sockets.on 'connection', (socket) ->
       position = Number.random game.players.length - 1
       Player.findById game.players[position], (err, player) ->
         player.turn = true
+        game.deal()
         game.save -> player.save ->
           socket.broadcast.emit game._id, game
           socket.emit game._id, game
