@@ -6,6 +6,7 @@ Schema = mongoose.Schema
 exports.gameSchema = new Schema
   mine        : Array
   discarded   : Array
+  started     : Boolean
   log         : Array
   monster     : String
   monsterHP   : Number

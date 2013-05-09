@@ -11,10 +11,9 @@ io = require('socket.io').listen(server, {log: false})
 io.sockets.on 'connection', (socket) ->
 
   socket.on 'create game', (model, callback) ->
-    console.log 'Creating new Game.'
     game = new Game
-    game.deal()
-    console.log game.log
+    game.started = false
+    #game.deal()
     game.save (err) ->
       callback game
 
@@ -22,12 +21,21 @@ io.sockets.on 'connection', (socket) ->
     Game.findById id, (err, game) ->
       callback game
 
+  socket.on 'start game', (req, callback) ->
+    Game.findById req.game._id, (err, game) ->
+      game.started = true
+      position = Number.random game.players.length - 1
+      Player.findById game.players[position], (err, player) ->
+        player.turn = true
+        game.save -> player.save ->
+          socket.broadcast.emit game._id, game
+          socket.emit game._id, game
+
   socket.on 'game add player', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if game.players.length <= 4 and game.players.indexOf(player._id) is -1
           game.players.push player
-          console.log game
           game.log.push "#{player.name} joined the game."
           player.hand = []
           player.plays = 1
@@ -48,7 +56,7 @@ io.sockets.on 'connection', (socket) ->
   socket.on 'create player', (model, callback) ->
     player = new Player
       name: 'Anonymous'
-      turn: true
+      turn: false
       points: 0
       draws: 1
     player.save (err) ->
@@ -191,9 +199,18 @@ io.sockets.on 'connection', (socket) ->
           socket.emit game.id, game
 
   socket.on 'change name', (req, callback) ->
-    Player.findById req.player._id, (err, player) ->
-      player.name = req.name
-      player.save -> socket.emit player.id, player
+    Game.findById req.game._id, (err, game) ->
+      Player.findById req.player._id, (err, player) ->
+        player.name = req.name
+        player.save ->
+          if game
+            game.populate 'players', (err, game) ->
+              game.save ->
+                socket.broadcast.emit game.id, game
+                socket.emit game.id, game
+                socket.emit player.id, player
+          else
+            socket.emit player.id, player
 
 
 

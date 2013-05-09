@@ -23,6 +23,16 @@ html
       #new-game.button
         | New Game
 
+    script id="lobby-template"
+      form id="name"
+        input class="name" type="text" placeholder="{{name}}"
+      | {{#players}}
+      .player class="{{turn}}"
+        | {{name}}
+      | {{/players}}
+      #start-game.button
+        | Start Game
+
     script id="mine-template"
       | Mine ({{mine.length}})
 

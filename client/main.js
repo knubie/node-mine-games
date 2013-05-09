@@ -30,8 +30,7 @@
         _Class.prototype.initialize = function() {
           var _this = this;
           return socket.on(this.id, function(game) {
-            _this.set(game);
-            return app.view.mine.render();
+            return _this.set(game);
           });
         };
 
@@ -158,6 +157,8 @@
           if (app.view != null) {
             app.view.remove();
           }
+          app.view = this;
+          console.log(app.player);
           return app.player.on('change:name', function() {
             return _this.render();
           });
@@ -175,6 +176,9 @@
           $('#name').submit(function(e) {
             e.preventDefault();
             return socket.emit('change name', {
+              game: {
+                _id: 0
+              },
               player: app.player,
               name: $('.name').val()
             });
@@ -209,33 +213,54 @@
         }
 
         _Class.prototype.initialize = function() {
+          var _this = this;
+          console.log('new game');
           if (app.view != null) {
             app.view.remove();
           }
-          this.hand = new views.Hand;
-          this.hand.render();
-          this.discarded = new views.Discarded;
-          this.discarded.render();
-          this.played = new views.Played;
-          this.played.render();
-          this.points = new views.Points;
-          this.points.render();
-          this.plays = new views.Plays;
-          this.plays.render();
-          this.draws = new views.Draws;
-          this.draws.render();
-          this.players = new views.Players;
-          this.players.render();
-          this.mine = new views.Mine;
-          this.mine.render();
-          this.shop = new views.Shop;
-          this.shop.render();
-          this.log = new views.Log;
-          this.log.render();
+          app.view = this;
+          app.game.on('change:started', function() {
+            return _this.render();
+          });
           return this.$el = $('#container');
         };
 
         _Class.prototype.template = $('#game-template').html();
+
+        _Class.prototype.render = function() {
+          console.log('render game');
+          console.log(app.game);
+          if (app.game.get('started')) {
+            console.log('game started');
+            if (this.lobby) {
+              this.lobby.remove();
+            }
+            this.hand = new views.Hand;
+            this.hand.render();
+            this.discarded = new views.Discarded;
+            this.discarded.render();
+            this.played = new views.Played;
+            this.played.render();
+            this.points = new views.Points;
+            this.points.render();
+            this.plays = new views.Plays;
+            this.plays.render();
+            this.draws = new views.Draws;
+            this.draws.render();
+            this.players = new views.Players;
+            this.players.render();
+            this.mine = new views.Mine;
+            this.mine.render();
+            this.shop = new views.Shop;
+            this.shop.render();
+            this.log = new views.Log;
+            return this.log.render();
+          } else {
+            console.log('game not started');
+            this.lobby = new views.Lobby;
+            return this.lobby.render();
+          }
+        };
 
         _Class.prototype.events = {
           'click #end-turn-button': 'endTurn',
@@ -256,6 +281,62 @@
               '-webkit-transform': 'translateX(110px)'
             });
           }
+        };
+
+        return _Class;
+
+      })(Backbone.View),
+      Lobby: (function(_super) {
+
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        _Class.prototype.initialize = function() {
+          var _this = this;
+          console.log('new lobby');
+          if (app.view.lobby) {
+            app.view.lobby.remove();
+          }
+          app.game.on('change:players', function() {
+            return _this.render();
+          });
+          app.player.on('change:name', function() {
+            return _this.render();
+          });
+          return $('#container').append(this.$el);
+        };
+
+        _Class.prototype.id = 'lobby';
+
+        _Class.prototype.template = $('#lobby-template').html();
+
+        _Class.prototype.render = function() {
+          console.log('render lobby');
+          this.$el.html(Mustache.render(this.template, {
+            players: app.game.get('players'),
+            name: app.player.get('name')
+          }));
+          return $('#name').submit(function(e) {
+            e.preventDefault();
+            return socket.emit('change name', {
+              game: app.game,
+              player: app.player,
+              name: $('.name').val()
+            });
+          });
+        };
+
+        _Class.prototype.events = {
+          'click #start-game': 'startGame'
+        };
+
+        _Class.prototype.startGame = function() {
+          return socket.emit('start game', {
+            game: app.game
+          });
         };
 
         return _Class;
@@ -652,7 +733,7 @@
 
       Routes.prototype.home = function() {
         app.player = new models.Player;
-        return app.view = new views.Home;
+        return new views.Home;
       };
 
       Routes.prototype.showGame = function(id) {
@@ -664,7 +745,7 @@
         } else {
           app.player = new models.Player;
         }
-        return app.view = new views.Game;
+        return new views.Game;
       };
 
       return Routes;

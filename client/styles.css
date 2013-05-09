@@ -36,26 +36,81 @@ input {
   display: inline-block;
   margin: 5px 4px 5px 4px; }
 
-#mine, #discarded {
-  background-image: url(img/mine.png);
-  background-size: 177%;
-  background-position: center;
-  background-color: #333333;
-  color: #eeeeee;
-  border: 2px solid #333333;
-  display: inline-block; }
-
-#hand {
-  white-space: nowrap;
-  overflow-x: scroll;
-  height: 136px;
-  width: 100%; }
-
-#mine, #hand {
-  position: relative; }
+#info {
+  padding: 7px 12px;
+  margin-bottom: 10px;
+  background-color: #eeeeee;
+  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
+  font-size: 18px; }
+  #info div {
+    display: inline-block; }
+  #info img {
+    margin-right: 4px;
+    margin-bottom: -3px; }
+  #info #draws, #info #plays, #info #points {
+    margin: 0 0 0 22px; }
+  #info #end-turn-button {
+    float: right; }
+  #info .info-button {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 4px;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border-bottom-color: #b3b3b3;
+    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-image: linear-gradient(to bottom, #efefef, #dfdfdf);
+    background-repeat: repeat-x; }
+  #info .info-button:hover {
+    cursor: pointer; }
+  #info .disabled {
+    color: #cccccc; }
+  #info #players {
+    font-size: 16px;
+    margin-top: 6px;
+    text-align: center;
+    width: 100%; }
+    #info #players .player {
+      max-width: 90px;
+      white-space: nowrap;
+      overflow: hidden; }
+    #info #players .player:nth-child(1) {
+      float: left; }
+    #info #players .player:nth-child(3) {
+      float: right; }
+    #info #players .player.false {
+      color: #bbbbbb; }
 
 #game {
   position: relative; }
+  #game #mine:hover {
+    cursor: pointer; }
+  #game #mine, #game #discarded {
+    background-image: url(img/mine.png);
+    background-size: 177%;
+    background-position: center;
+    background-color: #333333;
+    color: #eeeeee;
+    border: 2px solid #333333;
+    display: inline-block; }
+  #game #mine, #game #hand {
+    position: relative; }
+  #game #hand {
+    white-space: nowrap;
+    overflow-x: scroll;
+    height: 136px;
+    width: 100%; }
+
+#log {
+  position: absolute;
+  top: 359px;
+  bottom: 0;
+  width: 320px;
+  box-sizing: border-box;
+  overflow: scroll;
+  background-color: white;
+  color: #333333;
+  font-size: 16px;
+  padding: 10px; }
 
 .gem {
   background-size: 177%;
@@ -97,52 +152,6 @@ input {
 .card:active {
   -webkit-transform: translate(1px, 1px); }
 
-#mine:hover {
-  cursor: pointer; }
-
-#info {
-  padding: 7px 12px;
-  margin-bottom: 10px;
-  background-color: #eeeeee;
-  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
-  font-size: 18px; }
-  #info div {
-    display: inline-block; }
-  #info img {
-    margin-right: 4px;
-    margin-bottom: -3px; }
-  #info #draws, #info #plays, #info #points {
-    margin: 0 0 0 22px; }
-  #info #end-turn-button {
-    float: right; }
-  #info .info-button {
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    padding: 4px;
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
-    border-bottom-color: #b3b3b3;
-    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
-    background-image: linear-gradient(to bottom, #efefef, #dfdfdf);
-    background-repeat: repeat-x; }
-  #info .info-button:hover {
-    cursor: pointer; }
-  #info .disabled {
-    color: #cccccc; }
-  #info #players {
-    margin-top: 6px;
-    text-align: center;
-    width: 100%; }
-    #info #players .player {
-      max-width: 90px;
-      white-space: nowrap;
-      overflow: hidden; }
-    #info #players .player:nth-child(1) {
-      float: left; }
-    #info #players .player:nth-child(3) {
-      float: right; }
-    #info #players .player.false {
-      color: #bbbbbb; }
-
 .button {
   display: inline-block;
   background-color: #5bbae9;
@@ -170,9 +179,6 @@ button:active {
   padding: 11px 0 12px;
   margin-top: 22px; }
 
-#players {
-  font-size: 16px; }
-
 .ui-draggable-dragging {
   z-index: 99; }
 
@@ -198,18 +204,6 @@ button:active {
     display: inline-block;
     margin: 5px 4px 5px 4px;
     position: relative; }
-
-#log {
-  position: absolute;
-  top: 359px;
-  bottom: 0;
-  width: 320px;
-  box-sizing: border-box;
-  overflow: scroll;
-  background-color: white;
-  color: #333333;
-  font-size: 16px;
-  padding: 10px; }
 
 #shop {
   width: 110px;

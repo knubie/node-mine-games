@@ -22,6 +22,11 @@
       </form>
       <div class="button" id="new-game">New Game</div>
     </script>
+    <script id="lobby-template">
+      <form id="name">
+        <input class="name" placeholder="{{name}}" type="text" />
+      </form>{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}<div class="button" id="start-game">Start Game</div>
+    </script>
     <script id="mine-template">Mine ({{mine.length}})</script>
     <script id="players-template">{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}</script>
     <script id="points-template">

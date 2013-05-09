@@ -20,14 +20,13 @@ $ ->
       initialize: ->
         socket.on @id, (game) =>
           @set game
-          app.view.mine.render()
       idAttribute: '_id'
       name: 'game'
       monster: ''
       monsterHP: 0
       log: []
       addPlayer: (player) ->
-        socket.emit 'game add player'
+        socket.emit 'game add player',
           player: player
           game: @
 
@@ -58,25 +57,25 @@ $ ->
           hand: hand
 
       discard: (card) ->
-        socket.emit 'discard'
+        socket.emit 'discard',
           game: app.game.attributes
           player: @
           card: card
 
       play: (card) ->
-        socket.emit 'play'
+        socket.emit 'play',
           game: app.game.attributes
           player: @
           card: card
 
       buy: (card) ->
-        socket.emit 'buy'
+        socket.emit 'buy',
           game: app.game.attributes
           player: @
           card: card
 
       endTurn: ->
-        socket.emit 'end turn'
+        socket.emit 'end turn',
           game: app.game.attributes
           player: @
 
@@ -88,6 +87,8 @@ $ ->
     Home: class extends Backbone.View
       initialize: ->
         app.view.remove() if app.view?
+        app.view = @
+        console.log app.player
         app.player.on 'change:name', => @render()
 
       id: 'home'
@@ -99,7 +100,8 @@ $ ->
         $('#container').append @$el
         $('#name').submit (e) ->
           e.preventDefault()
-          socket.emit 'change name'
+          socket.emit 'change name',
+            game: {_id: 0} #FIXME: need a better way to do this
             player: app.player
             name  : $('.name').val()
         return @
@@ -116,41 +118,57 @@ $ ->
 
     Game: class extends Backbone.View
       initialize: ->
+        console.log 'new game'
         app.view.remove() if app.view?
-
-        @hand = new views.Hand
-        @hand.render()
-
-        @discarded = new views.Discarded
-        @discarded.render()
-
-        @played = new views.Played
-        @played.render()
-
-        @points = new views.Points
-        @points.render()
-
-        @plays = new views.Plays
-        @plays.render()
-
-        @draws = new views.Draws
-        @draws.render()
-
-        @players = new views.Players
-        @players.render()
-
-        @mine = new views.Mine
-        @mine.render()
-
-        @shop = new views.Shop
-        @shop.render()
-
-        @log = new views.Log
-        @log.render()
+        app.view = @
+        app.game.on 'change:started', => @render()
+        #@render()
 
         @$el = $('#container')
 
       template: $('#game-template').html()
+
+      render: ->
+        console.log 'render game'
+        console.log app.game
+        if app.game.get 'started'
+          console.log 'game started'
+          @lobby.remove() if @lobby
+
+          @hand = new views.Hand
+          @hand.render()
+
+          @discarded = new views.Discarded
+          @discarded.render()
+
+          @played = new views.Played
+          @played.render()
+
+          @points = new views.Points
+          @points.render()
+
+          @plays = new views.Plays
+          @plays.render()
+
+          @draws = new views.Draws
+          @draws.render()
+
+          @players = new views.Players
+          @players.render()
+
+          @mine = new views.Mine
+          @mine.render()
+
+          @shop = new views.Shop
+          @shop.render()
+
+          @log = new views.Log
+          @log.render()
+        else
+          console.log 'game not started'
+          @lobby = new views.Lobby
+          @lobby.render()
+
 
       events:
         'click #end-turn-button': 'endTurn'
@@ -166,6 +184,38 @@ $ ->
         else
           $('#container').css
             '-webkit-transform': 'translateX(110px)'
+
+    Lobby: class extends Backbone.View
+      initialize: ->
+        #FIXEME: on change:players doesn't register name changes
+        console.log 'new lobby'
+        app.view.lobby.remove() if app.view.lobby
+        app.game.on 'change:players', => @render()
+        app.player.on 'change:name', => @render()
+        $('#container').append @$el
+
+      id: 'lobby'
+
+      template: $('#lobby-template').html()
+      render: ->
+        console.log 'render lobby'
+        @$el.html Mustache.render @template,
+          players: app.game.get('players')
+          name: app.player.get('name')
+
+        $('#name').submit (e) ->
+          e.preventDefault()
+          socket.emit 'change name',
+            game: app.game
+            player: app.player
+            name  : $('.name').val()
+
+      events:
+        'click #start-game': 'startGame'
+
+      startGame: ->
+        socket.emit 'start game',
+          game: app.game
 
     Mine: class extends Backbone.View
       initialize: ->
@@ -253,7 +303,7 @@ $ ->
           discarded: app.player.get('discarded')
 
         $('#discarded').click ->
-          socket.emit 'draw'
+          socket.emit 'draw',
             game: app.game.attributes
             player: app.player.attributes
             deck: 'discarded'
@@ -264,7 +314,7 @@ $ ->
         $('#hand').droppable
           accept: '#discarded > .card'
           drop: (e, ui) ->
-            socket.emit 'draw'
+            socket.emit 'draw',
               game: app.game.attributes
               player: app.player.attributes
               deck: 'discarded'
@@ -357,7 +407,7 @@ $ ->
 
         $('#chat').submit (e) ->
           e.preventDefault()
-          socket.emit 'send message'
+          socket.emit 'send message',
             game    : app.game
             player  : app.player
             message : $('.message').val()
@@ -378,7 +428,7 @@ $ ->
 
     home: ->
       app.player = new models.Player
-      app.view = new views.Home
+      new views.Home
 
     showGame: (id) ->
       app.game = new models.Game
@@ -389,7 +439,7 @@ $ ->
       else
         app.player = new models.Player
 
-      app.view = new views.Game
+      new views.Game
 
   app.routes = new Routes
   Backbone.history.start()
