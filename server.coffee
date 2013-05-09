@@ -57,7 +57,6 @@ io.sockets.on 'connection', (socket) ->
 
   socket.on 'read player', (id, callback) ->
     Player.findById id, (err, player) ->
-      if err then console.log err
       callback player
 
   socket.on 'draw', (req, callback) ->

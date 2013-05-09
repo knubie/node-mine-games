@@ -65,22 +65,31 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          this._id = sessionStorage.getItem('player id') || null;
+          this.set({
+            _id: sessionStorage.getItem('player id') || null
+          });
           if (this.isNew()) {
             return this.save({}, {
               success: function() {
                 sessionStorage.setItem('player id', _this.id);
-                return socket.on(_this.id, function(player) {
+                socket.on(_this.id, function(player) {
                   return _this.set(player);
                 });
+                if (app.game) {
+                  return app.game.addPlayer(_this);
+                }
               }
             });
           } else {
-            return this.fetch(function() {
-              var _this = this;
-              return socket.on(this.id, function(player) {
-                return _this.set(player);
-              });
+            return this.fetch({
+              success: function() {
+                socket.on(_this.id, function(player) {
+                  return _this.set(player);
+                });
+                if (app.game) {
+                  return app.game.addPlayer(_this);
+                }
+              }
             });
           }
         };
@@ -146,6 +155,9 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
+          if (app.view != null) {
+            app.view.remove();
+          }
           return app.player.on('change:name', function() {
             return _this.render();
           });
@@ -197,6 +209,9 @@
         }
 
         _Class.prototype.initialize = function() {
+          if (app.view != null) {
+            app.view.remove();
+          }
           this.hand = new views.Hand;
           this.hand.render();
           this.discarded = new views.Discarded;
@@ -298,7 +313,7 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          app.player.on('change', function() {
+          app.player.on('change:hand', function() {
             return _this.render();
           });
           return this.$el.insertAfter('#game > #droppable-two');
@@ -637,44 +652,19 @@
 
       Routes.prototype.home = function() {
         app.player = new models.Player;
-        if (app.view != null) {
-          app.view.remove();
-        }
         return app.view = new views.Home;
       };
 
       Routes.prototype.showGame = function(id) {
-        var fetchGame;
-        if (app.view != null) {
-          app.view.remove();
-        }
-        fetchGame = function() {
-          app.game = new models.Game({
-            _id: id
-          });
-          app.view = new views.Game;
-          return app.game.addPlayer(app.player);
-        };
-        app.player = new models.Player({
-          _id: sessionStorage.getItem('player id') || null
+        app.game = new models.Game({
+          _id: id
         });
-        if (app.player.isNew()) {
-          return app.player.save({}, {
-            success: function() {
-              sessionStorage.setItem('player id', app.player.id);
-              app.player = new models.Player({
-                _id: app.player.id
-              });
-              return fetchGame();
-            }
-          });
+        if (app.player) {
+          app.game.addPlayer(app.player);
         } else {
-          return app.player.fetch({
-            success: function() {
-              return fetchGame();
-            }
-          });
+          app.player = new models.Player;
         }
+        return app.view = new views.Game;
       };
 
       return Routes;

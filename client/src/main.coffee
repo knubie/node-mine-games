@@ -33,14 +33,19 @@ $ ->
 
     Player: class extends Backbone.Model
       initialize: ->
-        @_id = sessionStorage.getItem('player id') or null
+        @set
+          _id: sessionStorage.getItem('player id') or null
         if @isNew()
           @save {}, success: =>
             sessionStorage.setItem 'player id', @id
+            #TODO: refactor this and duplicate code below
             socket.on @id, (player) => @set player
+            app.game.addPlayer @ if app.game
         else
-          @fetch ->
-            socket.on @id, (player) => @set player
+          @fetch
+            success: =>
+              socket.on @id, (player) => @set player
+              app.game.addPlayer @ if app.game
 
       idAttribute: '_id'
       name: 'player'
@@ -82,6 +87,7 @@ $ ->
 
     Home: class extends Backbone.View
       initialize: ->
+        app.view.remove() if app.view?
         app.player.on 'change:name', => @render()
 
       id: 'home'
@@ -110,6 +116,8 @@ $ ->
 
     Game: class extends Backbone.View
       initialize: ->
+        app.view.remove() if app.view?
+
         @hand = new views.Hand
         @hand.render()
 
@@ -184,7 +192,7 @@ $ ->
 
     Hand: class extends Backbone.View
       initialize: ->
-        app.player.on 'change', => @render()
+        app.player.on 'change:hand', => @render()
         @$el.insertAfter '#game > #droppable-two'
         #$('#game').append @$el
 
@@ -369,31 +377,19 @@ $ ->
       'games/:id': 'showGame'
 
     home: ->
-      #TODO: routes desperately need refactoring
       app.player = new models.Player
-      app.view.remove() if app.view?
       app.view = new views.Home
 
     showGame: (id) ->
-      app.view.remove() if app.view?
+      app.game = new models.Game
+        _id: id
 
-      fetchGame = ->
-        app.game = new models.Game
-          _id: id
-        app.view = new views.Game
-        app.game.addPlayer app.player # Returns game model from server
-
-      app.player = new models.Player
-        _id: sessionStorage.getItem('player id') or null
-      if app.player.isNew()
-        app.player.save {}, success: ->
-          sessionStorage.setItem 'player id', app.player.id
-          app.player = new models.Player # Create model to update socket.on
-            _id: app.player.id
-          fetchGame()
+      if app.player
+        app.game.addPlayer app.player # Emits updated game model
       else
-        app.player.fetch success: ->
-          fetchGame()
+        app.player = new models.Player
+
+      app.view = new views.Game
 
   app.routes = new Routes
   Backbone.history.start()
