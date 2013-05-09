@@ -39,7 +39,6 @@ io.sockets.on 'connection', (socket) ->
             return deck.randomize()
           player.drawFrom(player.discarded) for [1..3]
           player.draws = 1
-        #Game.findById(req.game._id).populate 'players', (err, game) ->
         game.populate 'players', (err, game) ->
           game.save -> player.save ->
             socket.broadcast.emit game.id, game
@@ -138,32 +137,35 @@ io.sockets.on 'connection', (socket) ->
           socket.emit player._id, player
 
   socket.on 'end turn', (req, callback) ->
-    console.log 'endin turn'
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if player.turn
+          # End turn, reset draws, points, and plays.
+          # Redraw cards and save.
           game.log.push "#{player.name} ended his turn."
           player.turn = false
           player.draws = 1
           player.points = 0
+          player.plays = 1
           draws = 3 - player.hand.length
           if draws > 0
             player.drawFrom player.discarded for [1..draws]
-          game.save -> player.save ->
-            position = game.players.indexOf player.id
-            position++
-            socket.emit player._id, player
-            if position > game.players.length - 1
-              position = 0
-            Player.findById game.players[position], (err, player) ->
-              player.turn = true
-              player.plays = 1
-              if game.monster
-                console.log 'stealin loot'
-                game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
-                game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
-              game.save -> player.save ->
-                socket.emit player._id, player
+          # Save and emit change to client.
+          player.save -> socket.emit player._id, player
+          # Move turn to next player
+          position = game.players.indexOf player.id
+          position++
+          if position > game.players.length - 1
+            position = 0
+          # Find next player and start their turn.
+          Player.findById game.players[position], (err, player) ->
+            player.turn = true
+            if game.monster
+              game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
+              game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
+            player.save ->
+              socket.emit player._id, player
+              game.populate 'players', (err, game) -> game.save ->
                 socket.broadcast.emit game._id, game
                 socket.emit game._id, game
 

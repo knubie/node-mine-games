@@ -28,7 +28,8 @@ html
 
     script id="players-template"
       | {{#players}}
-      | {{name}} 
+      .player class="{{turn}}"
+        | {{name}}
       | {{/players}}
 
     script id="points-template"

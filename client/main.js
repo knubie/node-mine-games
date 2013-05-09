@@ -15,7 +15,6 @@
         socket.emit("create " + model.name, model, options.success);
       }
       if (method === 'read') {
-        console.log("reading " + model.name);
         return socket.emit("read " + model.name, model.id, options.success);
       }
     };
@@ -66,10 +65,24 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          this.set('hand', []);
-          return socket.on(this.id, function(player) {
-            return _this.set(player);
-          });
+          this._id = sessionStorage.getItem('player id') || null;
+          if (this.isNew()) {
+            return this.save({}, {
+              success: function() {
+                sessionStorage.setItem('player id', _this.id);
+                return socket.on(_this.id, function(player) {
+                  return _this.set(player);
+                });
+              }
+            });
+          } else {
+            return this.fetch(function() {
+              var _this = this;
+              return socket.on(this.id, function(player) {
+                return _this.set(player);
+              });
+            });
+          }
         };
 
         _Class.prototype.idAttribute = '_id';
@@ -133,7 +146,6 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          console.log(app.player);
           return app.player.on('change:name', function() {
             return _this.render();
           });
@@ -256,7 +268,6 @@
         _Class.prototype.template = $('#mine-template').html();
 
         _Class.prototype.render = function() {
-          console.log(app.game);
           return this.$el.html(Mustache.render(this.template, {
             mine: app.game.get('mine')
           }));
@@ -625,34 +636,11 @@
       };
 
       Routes.prototype.home = function() {
-        app.player = new models.Player({
-          _id: sessionStorage.getItem('player id') || null
-        });
-        if (app.player.isNew()) {
-          return app.player.save({}, {
-            success: function() {
-              sessionStorage.setItem('player id', app.player.id);
-              app.player = new models.Player({
-                _id: app.player.id
-              });
-              if (app.view != null) {
-                app.view.remove();
-              }
-              app.view = new views.Home;
-              return app.view.render();
-            }
-          });
-        } else {
-          return app.player.fetch({
-            success: function() {
-              if (app.view != null) {
-                app.view.remove();
-              }
-              app.view = new views.Home;
-              return app.view.render();
-            }
-          });
+        app.player = new models.Player;
+        if (app.view != null) {
+          app.view.remove();
         }
+        return app.view = new views.Home;
       };
 
       Routes.prototype.showGame = function(id) {

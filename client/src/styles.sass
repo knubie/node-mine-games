@@ -101,6 +101,35 @@ input
     margin-bottom: -3px
   #draws, #plays, #points
     margin: 0 0 0 22px
+  #end-turn-button
+    float: right
+  .info-button
+    border: 1px solid #ccc
+    border-radius: 4px
+    padding: 4px
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25)
+    border-bottom-color: #b3b3b3
+    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05)
+    background-image: linear-gradient(to bottom, #efefef, #dfdfdf)
+    background-repeat: repeat-x
+  .info-button:hover
+    cursor: pointer
+  .disabled
+    color: #ccc
+  #players
+    margin-top: 6px
+    text-align: center
+    width: 100%
+    .player
+      max-width: 90px
+      white-space: nowrap
+      overflow: hidden
+    .player:nth-child(1)
+      float: left
+    .player:nth-child(3)
+      float: right
+    .player.false
+      color: #bbb
 
 .button
   display: inline-block
@@ -181,21 +210,6 @@ button:active
   bottom: 0
   left: 0
   overflow: scroll
-#end-turn-button
-  float: right
-.info-button
-  border: 1px solid #ccc
-  border-radius: 4px
-  padding: 4px
-  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25)
-  border-bottom-color: #b3b3b3
-  -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05)
-  background-image: linear-gradient(to bottom, #efefef, #dfdfdf)
-  background-repeat: repeat-x
-.info-button:hover
-  cursor: pointer
-.disabled
-  color: #ccc
 
 #chat
   .message
@@ -206,3 +220,4 @@ input-placeholder
 
 p
   margin: 4px 0
+

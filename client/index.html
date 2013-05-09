@@ -23,7 +23,7 @@
       <div class="button" id="new-game">New Game</div>
     </script>
     <script id="mine-template">Mine ({{mine.length}})</script>
-    <script id="players-template">{{#players}}{{name}} {{/players}}</script>
+    <script id="players-template">{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}</script>
     <script id="points-template">
       <img height="19" src="img/gem-icon.png" width="17" />{{points}}</script>
     <script id="plays-template">

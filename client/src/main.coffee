@@ -9,7 +9,6 @@ $ ->
       socket.emit "create #{model.name}", model, options.success
 
     if method is 'read'
-      console.log "reading #{model.name}"
       socket.emit "read #{model.name}", model.id, options.success
 
   # Models / Collections
@@ -34,9 +33,15 @@ $ ->
 
     Player: class extends Backbone.Model
       initialize: ->
-        @set 'hand', []
-        socket.on @id, (player) =>
-          @set player
+        @_id = sessionStorage.getItem('player id') or null
+        if @isNew()
+          @save {}, success: =>
+            sessionStorage.setItem 'player id', @id
+            socket.on @id, (player) => @set player
+        else
+          @fetch ->
+            socket.on @id, (player) => @set player
+
       idAttribute: '_id'
       name: 'player'
       points: 0
@@ -77,8 +82,8 @@ $ ->
 
     Home: class extends Backbone.View
       initialize: ->
-        console.log app.player
         app.player.on 'change:name', => @render()
+
       id: 'home'
       template: $('#home-template').html()
 
@@ -165,7 +170,6 @@ $ ->
       template: $('#mine-template').html()
 
       render: ->
-        console.log app.game
         @$el.html Mustache.render @template,
           mine: app.game.get('mine')
 
@@ -365,23 +369,10 @@ $ ->
       'games/:id': 'showGame'
 
     home: ->
+      #TODO: routes desperately need refactoring
       app.player = new models.Player
-        _id: sessionStorage.getItem('player id') or null
-      if app.player.isNew()
-        app.player.save {}, success: ->
-          sessionStorage.setItem 'player id', app.player.id
-          app.player = new models.Player # Create model to update socket.on
-            _id: app.player.id
-
-          app.view.remove() if app.view?
-          app.view = new views.Home
-          app.view.render()
-      else
-        app.player.fetch success: ->
-          app.view.remove() if app.view?
-          app.view = new views.Home
-          app.view.render()
-
+      app.view.remove() if app.view?
+      app.view = new views.Home
 
     showGame: (id) ->
       app.view.remove() if app.view?
