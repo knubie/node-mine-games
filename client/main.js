@@ -158,7 +158,6 @@
             app.view.remove();
           }
           app.view = this;
-          console.log(app.player);
           return app.player.on('change:name', function() {
             return _this.render();
           });
@@ -214,7 +213,6 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          console.log('new game');
           if (app.view != null) {
             app.view.remove();
           }
@@ -228,7 +226,7 @@
         _Class.prototype.template = $('#game-template').html();
 
         _Class.prototype.render = function() {
-          console.log('render game');
+          console.log('render game view');
           console.log(app.game);
           if (app.game.get('started')) {
             console.log('game started');
@@ -296,7 +294,6 @@
 
         _Class.prototype.initialize = function() {
           var _this = this;
-          console.log('new lobby');
           if (app.view.lobby) {
             app.view.lobby.remove();
           }
@@ -314,7 +311,6 @@
         _Class.prototype.template = $('#lobby-template').html();
 
         _Class.prototype.render = function() {
-          console.log('render lobby');
           this.$el.html(Mustache.render(this.template, {
             players: app.game.get('players'),
             name: app.player.get('name')
@@ -634,9 +630,13 @@
         _Class.prototype.template = $('#players-template').html();
 
         _Class.prototype.render = function() {
-          return this.$el.html(Mustache.render(this.template, {
-            players: app.game.get('players')
-          }));
+          console.log('rendering players');
+          console.log(app.game);
+          if (typeof app.game.get('players')[0] !== 'string') {
+            return this.$el.html(Mustache.render(this.template, {
+              players: app.game.get('players')
+            }));
+          }
         };
 
         return _Class;
@@ -664,7 +664,7 @@
 
         _Class.prototype.render = function() {
           return this.$el.html(Mustache.render(this.template, {
-            shop: ['sword', 'axe', 'pickaxe', 'thief']
+            shop: ['sword', 'axe', 'pickaxe']
           }));
         };
 

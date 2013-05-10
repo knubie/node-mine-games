@@ -88,7 +88,6 @@ $ ->
       initialize: ->
         app.view.remove() if app.view?
         app.view = @
-        console.log app.player
         app.player.on 'change:name', => @render()
 
       id: 'home'
@@ -118,18 +117,16 @@ $ ->
 
     Game: class extends Backbone.View
       initialize: ->
-        console.log 'new game'
         app.view.remove() if app.view?
         app.view = @
         app.game.on 'change:started', => @render()
-        #@render()
 
         @$el = $('#container')
 
       template: $('#game-template').html()
 
       render: ->
-        console.log 'render game'
+        console.log 'render game view'
         console.log app.game
         if app.game.get 'started'
           console.log 'game started'
@@ -164,6 +161,7 @@ $ ->
 
           @log = new views.Log
           @log.render()
+
         else
           console.log 'game not started'
           @lobby = new views.Lobby
@@ -188,7 +186,6 @@ $ ->
     Lobby: class extends Backbone.View
       initialize: ->
         #FIXEME: on change:players doesn't register name changes
-        console.log 'new lobby'
         app.view.lobby.remove() if app.view.lobby
         app.game.on 'change:players', => @render()
         app.player.on 'change:name', => @render()
@@ -198,7 +195,6 @@ $ ->
 
       template: $('#lobby-template').html()
       render: ->
-        console.log 'render lobby'
         @$el.html Mustache.render @template,
           players: app.game.get('players')
           name: app.player.get('name')
@@ -372,8 +368,11 @@ $ ->
 
       template: $('#players-template').html()
       render: ->
-        @$el.html Mustache.render @template,
-          players: app.game.get('players')
+        console.log 'rendering players'
+        console.log app.game
+        unless typeof app.game.get('players')[0] is 'string'
+          @$el.html Mustache.render @template,
+            players: app.game.get('players')
 
     Shop: class extends Backbone.View
       initialize: ->
@@ -384,7 +383,7 @@ $ ->
       template: $('#shop-template').html()
       render: ->
         @$el.html Mustache.render @template,
-          shop: ['sword', 'axe', 'pickaxe', 'thief']
+          shop: ['sword', 'axe', 'pickaxe']
 
       events:
         'click .card': 'buy'
