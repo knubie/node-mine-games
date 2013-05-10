@@ -7,7 +7,10 @@ express = require('express')
 app = express()
 server = require('http').createServer(app)
 io = require('socket.io').listen(server, {log: false})
-io.set 'origins', '*herokuapp.com*:*'
+# Needed by heroku because it doesn't support websockets.. dafuq heroku..
+io.configure ->
+  io.set 'transports', ['xhr-polling']
+  io.set 'polling duration', 10
 
 io.sockets.on 'connection', (socket) ->
 
