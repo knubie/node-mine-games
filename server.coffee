@@ -6,6 +6,7 @@ express = require('express')
 
 app = express()
 server = require('http').createServer(app)
+io.set 'origins', '*herokuapp.com*:*'
 io = require('socket.io').listen(server, {log: false})
 
 io.sockets.on 'connection', (socket) ->
