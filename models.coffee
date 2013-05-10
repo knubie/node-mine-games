@@ -18,9 +18,7 @@ exports.gameSchema = new Schema
 
 exports.gameSchema.method
   deal: ->
-    @players = []
     @discarded = []
-    @log = ['Creating new game.']
     @mine = do ->
       mine1 = []
       mine2 = []

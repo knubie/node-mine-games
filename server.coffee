@@ -32,9 +32,12 @@ io.sockets.on 'connection', (socket) ->
       Player.findById game.players[position], (err, player) ->
         player.turn = true
         game.deal()
-        game.save -> player.save ->
-          socket.broadcast.emit game._id, game
-          socket.emit game._id, game
+        console.log game.players
+        player.save -> game.populate 'players', (err, game) ->
+          socket.emit player._id, player
+          game.save ->
+            socket.broadcast.emit game._id, game
+            socket.emit game._id, game
 
   socket.on 'game add player', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
@@ -217,7 +220,8 @@ io.sockets.on 'connection', (socket) ->
           else
             socket.emit player.id, player
 
-mongoose.connect 'mongodb://heroku_app15587557:6e39i3ei792jljkpnk5rbul97a@ds061777.mongolab.com:61777/heroku_app15587557'
+#mongoose.connect 'mongodb://heroku_app15587557:6e39i3ei792jljkpnk5rbul97a@ds061777.mongolab.com:61777/heroku_app15587557'
+mongoose.connect process.env.MONGOLAB_URI || 'mongodb://localhost/test'
 db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once 'open', ->
