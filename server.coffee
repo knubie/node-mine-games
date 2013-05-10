@@ -4,6 +4,14 @@ _ = require 'underscore'
 sugar = require 'sugar'
 express = require('express')
 
+#TODO: fix chat
+#TODO: add buys to the log
+#TODO: add alert for your turn
+#TODO: mine not updating
+#TODO: goblin stealing doesn't show up on client
+#TODO: goblin defeat doesn't show up on client
+#TODO: fix goblin defeat log message
+
 app = express()
 server = require('http').createServer(app)
 io = require('socket.io').listen(server, {log: false})
