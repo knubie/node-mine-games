@@ -451,9 +451,15 @@
         }
 
         _Class.prototype.initialize = function() {
+          var _this = this;
           console.log('init game view');
           this.player = this.options.player;
           this.listenTo(this.model, 'change:started', this.render);
+          this.listenTo(this.player, 'change:turn', function() {
+            if (_this.player.turn) {
+              return alert("It's your turn.");
+            }
+          });
           return this.$el = $('#container');
         };
 

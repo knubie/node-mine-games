@@ -249,6 +249,8 @@ define [
       console.log 'init game view'
       @player = @options.player
       @listenTo @model, 'change:started', @render
+      @listenTo @player, 'change:turn', =>
+        alert "It's your turn." if @player.turn
       @$el = $('#container')
 
     template: $('#game-template').html()

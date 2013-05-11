@@ -4,8 +4,6 @@ _ = require 'underscore'
 sugar = require 'sugar'
 express = require('express')
 
-#TODO: fix chat
-#TODO: add alert for your turn
 #TODO: mine not updating
 #TODO: goblin stealing doesn't show up on client
 #TODO: goblin defeat doesn't show up on client
