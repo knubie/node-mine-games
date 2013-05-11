@@ -18,8 +18,8 @@
       }
     },
     paths: {
-      'socket.io': 'http://localhost:3000/socket.io/socket.io',
       'models': '../models',
+      'socket.io': 'http://localhost:3000/socket.io/socket.io',
       'views': '../views'
     }
   });
@@ -95,8 +95,11 @@
           if (app.player) {
             app.game.addPlayer(app.player);
           } else {
-            app.player = new models.Player;
-            app.game.addPlayer(app.player);
+            app.player = new models.Player({
+              afterSave: function() {
+                return app.game.addPlayer(app.player);
+              }
+            });
           }
           if (app.view != null) {
             app.view.remove();

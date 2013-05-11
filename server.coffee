@@ -14,6 +14,7 @@ express = require('express')
 app = express()
 server = require('http').createServer(app)
 io = require('socket.io').listen(server, {log: false})
+
 # Needed by heroku because it doesn't support websockets.. dafuq heroku..
 io.configure ->
   io.set 'transports', ['xhr-polling']
@@ -47,6 +48,9 @@ io.sockets.on 'connection', (socket) ->
             socket.emit game._id, game
 
   socket.on 'join game', (req, callback) ->
+    console.log 'join game'
+    console.log req
+    # Join game being called before create player callback is fired.
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if game.players.length <= 4 and game.players.indexOf(player._id) is -1
@@ -69,13 +73,13 @@ io.sockets.on 'connection', (socket) ->
             socket.emit player._id, player
 
   socket.on 'create player', (model, callback) ->
+    console.log 'create player'
     player = new Player
       name: 'Anonymous'
       turn: false
       points: 0
       draws: 1
     player.save (err) ->
-      if err then console.log err
       callback player
 
   socket.on 'read player', (id, callback) ->
@@ -230,7 +234,6 @@ io.sockets.on 'connection', (socket) ->
           else
             socket.emit player.id, player
 
-#mongoose.connect 'mongodb://heroku_app15587557:6e39i3ei792jljkpnk5rbul97a@ds061777.mongolab.com:61777/heroku_app15587557'
 mongoose.connect process.env.MONGOLAB_URI || 'mongodb://localhost/test'
 db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))

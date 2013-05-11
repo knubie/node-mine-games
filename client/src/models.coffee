@@ -40,10 +40,12 @@ define [
           sessionStorage.setItem 'player id', @id # Store new ID
           #TODO: refactor this and duplicate code below
           socket.on @id, (player) => @set player
+          @get('afterSave')() if @get('afterSave')
       else
         @fetch
           success: =>
             socket.on @id, (player) => @set player
+            @get('afterSave')() if @get('afterSave')
 
     idAttribute: '_id'
     name: 'player'
@@ -89,3 +91,9 @@ define [
       socket.emit 'end turn',
         game: game
         player: @
+
+    say: (message, game) ->
+      socket.emit 'send message',
+        game    : game
+        player  : @
+        message : message

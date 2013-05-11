@@ -75,17 +75,23 @@
             return this.save({}, {
               success: function() {
                 sessionStorage.setItem('player id', _this.id);
-                return socket.on(_this.id, function(player) {
+                socket.on(_this.id, function(player) {
                   return _this.set(player);
                 });
+                if (_this.get('afterSave')) {
+                  return _this.get('afterSave')();
+                }
               }
             });
           } else {
             return this.fetch({
               success: function() {
-                return socket.on(_this.id, function(player) {
+                socket.on(_this.id, function(player) {
                   return _this.set(player);
                 });
+                if (_this.get('afterSave')) {
+                  return _this.get('afterSave')();
+                }
               }
             });
           }
@@ -152,6 +158,14 @@
           return socket.emit('end turn', {
             game: game,
             player: this
+          });
+        };
+
+        _Class.prototype.say = function(message, game) {
+          return socket.emit('send message', {
+            game: game,
+            player: this,
+            message: message
           });
         };
 

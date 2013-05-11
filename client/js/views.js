@@ -4,7 +4,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   define(['jquery', 'underscore', 'backbone', 'mustache', 'models'], function($, _, Backbone, Mustache, models) {
-    var Discarded, Draws, Hand, Lobby, Log, Mine, Played, Players, Plays, Points, Shop;
+    var Chat, Discarded, Draws, Hand, Lobby, Log, Mine, Played, Players, Plays, Points, Shop;
     Lobby = (function(_super) {
 
       __extends(Lobby, _super);
@@ -357,18 +357,44 @@
         this.$el.html(Mustache.render(this.template, {
           log: this.model.get('log')
         }));
-        this.el.scrollTop = 9999;
-        return $('#chat').submit(function(e) {
-          e.preventDefault();
-          return socket.emit('send message', {
-            game: this.model,
-            player: this.player,
-            message: $('.message').val()
-          });
-        });
+        return this.el.scrollTop = 9999;
       };
 
       return Log;
+
+    })(Backbone.View);
+    Chat = (function(_super) {
+
+      __extends(Chat, _super);
+
+      function Chat() {
+        return Chat.__super__.constructor.apply(this, arguments);
+      }
+
+      Chat.prototype.initialize = function() {
+        this.player = this.options.player;
+        return this.$el.insertAfter('#log');
+      };
+
+      Chat.prototype.id = 'chat-container';
+
+      Chat.prototype.template = $('#chat-template').html();
+
+      Chat.prototype.render = function() {
+        return this.$el.html(this.template);
+      };
+
+      Chat.prototype.events = {
+        'submit #chat': 'sendMessage'
+      };
+
+      Chat.prototype.sendMessage = function(e) {
+        e.preventDefault();
+        this.player.say($('.message').val(), this.model);
+        return $('.message').val('');
+      };
+
+      return Chat;
 
     })(Backbone.View);
     return {
@@ -482,7 +508,12 @@
               model: this.model,
               player: this.player
             });
-            return this.log.render();
+            this.log.render();
+            this.chat = new Chat({
+              model: this.model,
+              player: this.player
+            });
+            return this.chat.render();
           } else {
             if (this.lobby) {
               this.lobby.remove();

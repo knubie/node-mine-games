@@ -64,8 +64,10 @@ html
       | {{#log}}
       p {{.}}
       | {{/log}}
+
+    script id="chat-template"
       form id="chat"
-        input class="message" type="text" placeholder="Send message.."
+        input class="message" type="text" placeholder="Send a message.."
 
     script id="discarded-template"
       /| {{#discarded}}

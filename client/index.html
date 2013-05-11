@@ -30,8 +30,10 @@
     <script id="draws-template">
       <img src="img/draw.png" />{{draws}}</script>
     <script id="hand-template">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/hand}}</script>
-    <script id="log-template">{{#log}}<p>{{.}}</p>{{/log}}<form id="chat">
-        <input class="message" placeholder="Send message.." type="text" />
+    <script id="log-template">{{#log}}<p>{{.}}</p>{{/log}}</script>
+    <script id="chat-template">
+      <form id="chat">
+        <input class="message" placeholder="Send a message.." type="text" />
       </form>
     </script>
     <script id="discarded-template">Deck ({{discarded.length}})</script>

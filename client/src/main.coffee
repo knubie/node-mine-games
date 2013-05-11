@@ -10,8 +10,8 @@ require.config
       exports: '_'
 
   paths:
-    'socket.io': 'http://localhost:3000/socket.io/socket.io'
     'models': '../models'
+    'socket.io': 'http://localhost:3000/socket.io/socket.io'
     'views': '../views'
 
 define (require) ->
@@ -67,7 +67,8 @@ define (require) ->
           app.game.addPlayer app.player # Emits updated game model
         else
           app.player = new models.Player
-          app.game.addPlayer app.player # Emits updated game model
+            afterSave: ->
+              app.game.addPlayer app.player # Emits updated game model
 
         app.view.remove() if app.view?
         app.view = new views.Game

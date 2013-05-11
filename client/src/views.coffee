@@ -193,14 +193,23 @@ define [
       @$el.html Mustache.render @template,
         log: @model.get 'log'
       @el.scrollTop = 9999
-      #TODO: keep focus on chat
 
-      $('#chat').submit (e) ->
-        e.preventDefault()
-        socket.emit 'send message',
-          game    : @model
-          player  : @player
-          message : $('.message').val()
+  class Chat extends Backbone.View
+    initialize: ->
+      @player = @options.player
+      @$el.insertAfter '#log'
+
+    id: 'chat-container'
+    template: $('#chat-template').html()
+    render: -> @$el.html @template
+
+    events:
+      'submit #chat': 'sendMessage'
+
+    sendMessage: (e) ->
+      e.preventDefault()
+      @player.say $('.message').val(), @model
+      $('.message').val('')
 
     #events:
       #'submit #chat': 'chat'
@@ -295,6 +304,11 @@ define [
           model: @model
           player: @player
         @log.render()
+
+        @chat = new Chat
+          model: @model
+          player: @player
+        @chat.render()
       else
         @lobby.remove() if @lobby
         @lobby = new Lobby
