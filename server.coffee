@@ -5,7 +5,6 @@ sugar = require 'sugar'
 express = require('express')
 
 #TODO: fix chat
-#TODO: add buys to the log
 #TODO: add alert for your turn
 #TODO: mine not updating
 #TODO: goblin stealing doesn't show up on client
@@ -47,7 +46,7 @@ io.sockets.on 'connection', (socket) ->
             socket.broadcast.emit game._id, game
             socket.emit game._id, game
 
-  socket.on 'game add player', (req, callback) ->
+  socket.on 'join game', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
         if game.players.length <= 4 and game.players.indexOf(player._id) is -1
@@ -123,8 +122,8 @@ io.sockets.on 'connection', (socket) ->
             game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
             game.log.push 'A Triclops appears!'
             game.log.push "The Triclops stole a card from #{player.name}'s hand."
-          player.save -> socket.emit player._id, player
-          game.save ->
+          game.save -> player.save ->
+            socket.emit player._id, player
             socket.broadcast.emit game._id, game
             socket.emit game._id, game
 

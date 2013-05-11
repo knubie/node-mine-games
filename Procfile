@@ -1,3 +1,3 @@
-sass: sass --watch client/src:client/
-coffee: coffee --watch --compile --output client/ client/src
+sass: sass --watch client/src:client/css
+coffee: coffee --watch --compile --output client/js client/src
 guard: guard
