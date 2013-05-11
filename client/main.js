@@ -401,22 +401,10 @@
         _Class.prototype.template = $('#hand-template').html();
 
         _Class.prototype.render = function() {
-          this.$el.html(Mustache.render(this.template, {
+          console.log('rendering hand');
+          return this.$el.html(Mustache.render(this.template, {
             hand: app.player.get('hand')
           }));
-          $('#hand').children().draggable();
-          $('#droppable-one').droppable({
-            accept: '#hand > .card',
-            drop: function(e, ui) {
-              return app.player.discard(ui.draggable.attr('data-card'));
-            }
-          });
-          return $('#droppable-two').droppable({
-            accept: '#hand > .card',
-            drop: function(e, ui) {
-              return app.player.play(ui.draggable.attr('data-card'));
-            }
-          });
         };
 
         _Class.prototype.events = {

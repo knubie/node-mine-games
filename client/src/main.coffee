@@ -167,7 +167,6 @@ $ ->
           @lobby = new views.Lobby
           @lobby.render()
 
-
       events:
         'click #end-turn-button': 'endTurn'
         'click #shop-button': 'toggleShop'
@@ -245,20 +244,9 @@ $ ->
       id: 'hand'
       template: $('#hand-template').html()
       render: ->
+        console.log 'rendering hand'
         @$el.html Mustache.render @template,
           hand: app.player.get('hand')
-
-        $('#hand').children().draggable()
-
-        $('#droppable-one').droppable
-          accept: '#hand > .card'
-          drop: (e, ui) ->
-            app.player.discard ui.draggable.attr('data-card')
-
-        $('#droppable-two').droppable
-          accept: '#hand > .card'
-          drop: (e, ui) ->
-            app.player.play ui.draggable.attr('data-card')
 
       events:
         'click .card': 'play'

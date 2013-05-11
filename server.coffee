@@ -203,7 +203,10 @@ io.sockets.on 'connection', (socket) ->
           if player.points >= shop[req.card]
             player.points -= shop[req.card]
             player.hand.push req.card
-            player.save ->
+            game.log.push "#{player.name} bought a #{req.card}."
+            game.save -> player.save ->
+              socket.emit game._id, game
+              socket.broadcast.emit game._id, game
               socket.emit player._id, player
 
   socket.on 'send message', (req, callback) ->

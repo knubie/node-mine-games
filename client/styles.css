@@ -100,7 +100,8 @@ input {
     overflow-x: scroll;
     overflow-y: hidden;
     height: 136px;
-    width: 100%; }
+    width: 100%;
+    -webkit-transition: -webkit-transform 0.5s; }
 
 #log {
   position: absolute;
