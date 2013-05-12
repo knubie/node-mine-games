@@ -3,8 +3,8 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['jquery', 'underscore', 'backbone', 'mustache', 'models'], function($, _, Backbone, Mustache, models) {
-    var Chat, Discarded, Draws, Hand, Lobby, Log, Mine, Played, Players, Plays, Points, Shop;
+  define(['zepto', 'underscore', 'backbone', 'mustache', 'models'], function($, _, Backbone, Mustache, models) {
+    var Chat, Discarded, Hand, Info, Lobby, Log, Mine, Played, Players, Shop;
     Lobby = (function(_super) {
 
       __extends(Lobby, _super);
@@ -62,18 +62,31 @@
         this.game = this.options.game;
         this.player = this.options.player;
         this.listenTo(this.game, 'change:mine', this.render);
-        this.$el.addClass('card');
-        return this.$el.insertBefore('#game > #droppable-one');
+        this.listenTo(this.game, 'change:monster', this.render);
+        return this.listenTo(this.game, 'change:monsterHP', this.render);
       };
 
       Mine.prototype.id = 'mine';
 
-      Mine.prototype.template = $('#mine-template').html();
+      Mine.prototype.mineTemplate = $('#mine-template').html();
+
+      Mine.prototype.monsterTemplate = $('#monster-template').html();
 
       Mine.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
-          mine: this.game.get('mine')
-        }));
+        var _this = this;
+        if (this.game.get('monster')) {
+          this.$el.html(Mustache.render(this.monsterTemplate, {
+            monster: this.game.get('monster'),
+            hp: function() {
+              return _this.game.get('monsterHP') / 20 * 100;
+            }
+          }));
+        } else {
+          this.$el.html(Mustache.render(this.mineTemplate, {
+            mine: this.game.get('mine')
+          }));
+        }
+        return this.$el;
       };
 
       Mine.prototype.events = {
@@ -98,8 +111,7 @@
       Hand.prototype.initialize = function() {
         this.game = this.options.game;
         this.player = this.options.player;
-        this.listenTo(this.player, 'change:hand', this.render);
-        return this.$el.insertAfter('#game > #droppable-two');
+        return this.listenTo(this.player, 'change:hand', this.render);
       };
 
       Hand.prototype.id = 'hand';
@@ -107,13 +119,16 @@
       Hand.prototype.template = $('#hand-template').html();
 
       Hand.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
+        console.log('hand changed');
+        console.log(this.player.get('hand'));
+        this.$el.html(Mustache.render(this.template, {
           hand: this.player.get('hand')
         }));
+        return this.$el;
       };
 
       Hand.prototype.events = {
-        'click .card': 'play'
+        'tap,click .card': 'play'
       };
 
       Hand.prototype.play = function(e) {
@@ -121,6 +136,64 @@
       };
 
       return Hand;
+
+    })(Backbone.View);
+    Info = (function(_super) {
+
+      __extends(Info, _super);
+
+      function Info() {
+        return Info.__super__.constructor.apply(this, arguments);
+      }
+
+      Info.prototype.initialize = function() {
+        console.log('init info');
+        this.player = this.options.player;
+        this.game = this.options.game;
+        this.listenTo(this.player, 'change', this.render);
+        return $('#info').prepend(this.$el);
+      };
+
+      Info.prototype.id = 'stats';
+
+      Info.prototype.template = $('#info-template').html();
+
+      Info.prototype.render = function() {
+        return this.$el.html(Mustache.render(this.template, {
+          player: this.player.attributes
+        }));
+      };
+
+      return Info;
+
+    })(Backbone.View);
+    Players = (function(_super) {
+
+      __extends(Players, _super);
+
+      function Players() {
+        return Players.__super__.constructor.apply(this, arguments);
+      }
+
+      Players.prototype.initialize = function() {
+        console.log('init players list');
+        this.listenTo(this.model, 'change:players', this.render);
+        return $('#info').append(this.$el);
+      };
+
+      Players.prototype.id = 'players';
+
+      Players.prototype.template = $('#players-template').html();
+
+      Players.prototype.render = function() {
+        if (typeof this.model.get('players')[0] !== 'string') {
+          return this.$el.html(Mustache.render(this.template, {
+            players: this.model.get('players')
+          }));
+        }
+      };
+
+      return Players;
 
     })(Backbone.View);
     Discarded = (function(_super) {
@@ -134,9 +207,7 @@
       Discarded.prototype.initialize = function() {
         this.player = this.options.player;
         this.game = this.options.game;
-        this.listenTo(this.player, 'change:discarded', this.render);
-        this.$el.addClass('card');
-        return $('#droppable-one').append(this.$el);
+        return this.listenTo(this.player, 'change:discarded', this.render);
       };
 
       Discarded.prototype.id = 'discarded';
@@ -144,9 +215,18 @@
       Discarded.prototype.template = $('#discarded-template').html();
 
       Discarded.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
-          discarded: this.player.get('discarded')
+        var empty;
+        console.log(this.player);
+        if (this.player.get('discarded').length < 1) {
+          empty = 'empty-card';
+        } else {
+          empty = 'deck card';
+        }
+        this.$el.html(Mustache.render(this.template, {
+          discarded: this.player.get('discarded'),
+          empty: empty
         }));
+        return this.$el;
       };
 
       Discarded.prototype.events = {
@@ -170,8 +250,7 @@
 
       Played.prototype.initialize = function() {
         this.listenTo(this.model, 'change:monster', this.render);
-        this.listenTo(this.model, 'change:monsterHP', this.render);
-        return $('#droppable-two').append(this.$el);
+        return this.listenTo(this.model, 'change:monsterHP', this.render);
       };
 
       Played.prototype.id = 'played';
@@ -179,124 +258,22 @@
       Played.prototype.template = $('#played-template').html();
 
       Played.prototype.render = function() {
+        var _this = this;
         if (this.model.get('monster')) {
           $('#droppable-two').append(this.$el);
-          return this.$el.html(Mustache.render(this.template, {
+          this.$el.html(Mustache.render(this.template, {
             played: this.model.get('monster'),
-            hp: this.model.get('monsterHP')
+            hp: function() {
+              return _this.model.get('monsterHP') / 20 * 100;
+            }
           }));
         } else {
-          return $('#played').remove();
+          $('#played').remove();
         }
+        return this.$el;
       };
 
       return Played;
-
-    })(Backbone.View);
-    Points = (function(_super) {
-
-      __extends(Points, _super);
-
-      function Points() {
-        return Points.__super__.constructor.apply(this, arguments);
-      }
-
-      Points.prototype.initialize = function() {
-        this.listenTo(this.model, 'change:points', this.render);
-        return this.$el.insertAfter('#shop-button');
-      };
-
-      Points.prototype.id = 'points';
-
-      Points.prototype.template = $('#points-template').html();
-
-      Points.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
-          points: this.model.get('points')
-        }));
-      };
-
-      return Points;
-
-    })(Backbone.View);
-    Plays = (function(_super) {
-
-      __extends(Plays, _super);
-
-      function Plays() {
-        return Plays.__super__.constructor.apply(this, arguments);
-      }
-
-      Plays.prototype.initialize = function() {
-        this.listenTo(this.model, 'change:plays', this.render);
-        return this.$el.insertAfter('#shop-button');
-      };
-
-      Plays.prototype.id = 'plays';
-
-      Plays.prototype.template = $('#plays-template').html();
-
-      Plays.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
-          plays: this.model.get('plays')
-        }));
-      };
-
-      return Plays;
-
-    })(Backbone.View);
-    Draws = (function(_super) {
-
-      __extends(Draws, _super);
-
-      function Draws() {
-        return Draws.__super__.constructor.apply(this, arguments);
-      }
-
-      Draws.prototype.initialize = function() {
-        this.listenTo(this.model, 'change:draws', this.render);
-        return this.$el.insertAfter('#shop-button');
-      };
-
-      Draws.prototype.id = 'draws';
-
-      Draws.prototype.template = $('#draws-template').html();
-
-      Draws.prototype.render = function() {
-        return this.$el.html(Mustache.render(this.template, {
-          draws: this.model.get('draws')
-        }));
-      };
-
-      return Draws;
-
-    })(Backbone.View);
-    Players = (function(_super) {
-
-      __extends(Players, _super);
-
-      function Players() {
-        return Players.__super__.constructor.apply(this, arguments);
-      }
-
-      Players.prototype.initialize = function() {
-        this.listenTo(this.model, 'change:players', this.render);
-        return $('#info').append(this.$el);
-      };
-
-      Players.prototype.id = 'players';
-
-      Players.prototype.template = $('#players-template').html();
-
-      Players.prototype.render = function() {
-        if (typeof this.model.get('players')[0] !== 'string') {
-          return this.$el.html(Mustache.render(this.template, {
-            players: this.model.get('players')
-          }));
-        }
-      };
-
-      return Players;
 
     })(Backbone.View);
     Shop = (function(_super) {
@@ -346,7 +323,7 @@
       Log.prototype.initialize = function() {
         this.player = this.options.player;
         this.listenTo(this.model, 'change:log', this.render);
-        return this.$el.insertAfter('#game');
+        return $('#container').append(this.$el);
       };
 
       Log.prototype.id = 'log';
@@ -460,47 +437,44 @@
               return alert("It's your turn.");
             }
           });
-          return this.$el = $('#container');
+          return $('#container').append(this.$el);
         };
 
         _Class.prototype.template = $('#game-template').html();
+
+        _Class.prototype.id = 'game';
 
         _Class.prototype.render = function() {
           if (this.model.get('started')) {
             if (this.lobby) {
               this.lobby.remove();
             }
+            console.log(this.player);
+            this.$el.html(this.template);
             this.mine = new Mine({
               game: this.model,
               player: this.player
             });
-            this.mine.render();
-            this.hand = new Hand({
-              game: this.model,
-              player: this.player
-            });
-            this.hand.render();
+            this.$el.append(this.mine.render());
             this.discarded = new Discarded({
               game: this.model,
               player: this.player
             });
-            this.discarded.render();
+            this.$el.append(this.discarded.render());
+            this.hand = new Hand({
+              game: this.model,
+              player: this.player
+            });
+            this.$el.append(this.hand.render());
             this.played = new Played({
               model: this.model
             });
-            this.played.render();
-            this.points = new Points({
-              model: this.player
+            this.$el.append(this.played.render());
+            this.info = new Info({
+              game: this.model,
+              player: this.player
             });
-            this.points.render();
-            this.plays = new Plays({
-              model: this.player
-            });
-            this.plays.render();
-            this.draws = new Draws({
-              model: this.player
-            });
-            this.draws.render();
+            this.info.render();
             this.players = new Players({
               model: this.model
             });

@@ -6,11 +6,14 @@
   require.config({
     baseUrl: 'js/vendor',
     shim: {
+      'zepto': {
+        exports: '$'
+      },
       'socket.io': {
         exports: 'io'
       },
       'backbone': {
-        deps: ['underscore', 'jquery'],
+        deps: ['underscore', 'zepto'],
         exports: 'Backbone'
       },
       'underscore': {
@@ -26,7 +29,7 @@
 
   define(function(require) {
     var $, Backbone, io, models, views, _;
-    $ = require('jquery');
+    $ = require('zepto');
     _ = require('underscore');
     Backbone = require('backbone');
     io = require('socket.io');
@@ -87,28 +90,22 @@
         };
 
         Routes.prototype.showGame = function(id) {
-          if (!(app.game && app.game.id === id)) {
-            app.game = new models.Game({
-              _id: id
-            });
-          }
-          if (app.player) {
-            app.game.addPlayer(app.player);
-          } else {
-            app.player = new models.Player({
-              afterSave: function() {
-                return app.game.addPlayer(app.player);
-              }
-            });
-          }
-          if (app.view != null) {
-            app.view.remove();
-          }
-          app.view = new views.Game({
-            model: app.game,
-            player: app.player
+          app.game = new models.Game({
+            _id: id
           });
-          return app.view.render();
+          return app.player = new models.Player({
+            afterSave: function() {
+              app.game.addPlayer(app.player);
+              if (app.view != null) {
+                app.view.remove();
+              }
+              app.view = new views.Game({
+                model: app.game,
+                player: app.player
+              });
+              return app.view.render();
+            }
+          });
         };
 
         return Routes;

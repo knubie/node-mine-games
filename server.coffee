@@ -4,10 +4,11 @@ _ = require 'underscore'
 sugar = require 'sugar'
 express = require('express')
 
-#TODO: mine not updating
 #TODO: goblin stealing doesn't show up on client
 #TODO: goblin defeat doesn't show up on client
 #TODO: fix goblin defeat log message
+#TODO: add mana cards and spells
+#TODO: add a game ref to player model
 
 app = express()
 server = require('http').createServer(app)
@@ -38,7 +39,6 @@ io.sockets.on 'connection', (socket) ->
       Player.findById game.players[position], (err, player) ->
         player.turn = true
         game.deal()
-        console.log game.players
         player.save -> game.populate 'players', (err, game) ->
           socket.emit player._id, player
           game.save ->
@@ -46,8 +46,6 @@ io.sockets.on 'connection', (socket) ->
             socket.emit game._id, game
 
   socket.on 'join game', (req, callback) ->
-    console.log 'join game'
-    console.log req
     # Join game being called before create player callback is fired.
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
@@ -188,7 +186,7 @@ io.sockets.on 'connection', (socket) ->
               game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
               game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
             player.save ->
-              socket.emit player._id, player
+              socket.broadcast.emit player._id, player
               game.populate 'players', (err, game) -> game.save ->
                 socket.broadcast.emit game._id, game
                 socket.emit game._id, game

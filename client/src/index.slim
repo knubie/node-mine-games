@@ -7,7 +7,7 @@ html
     meta content="" name="description"
     meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport"
     link href="css/lib/reset.css" rel="stylesheet"
-    link href="css/vendor/bootstrap.min.css" rel="stylesheet"
+    link href="css/vendor/bootstrap.css" rel="stylesheet"
     link href="css/styles.css" rel="stylesheet"
     script data-main="js/main" src="js/vendor/require.js"
     /script src="js/vendor/jquery.js"
@@ -17,13 +17,13 @@ html
     /script src="http://localhost:3000/socket.io/socket.io.js"
     /script src="js/main.js"
 
-    script id="home-template"
+    script type="template" id="home-template"
       form id="name"
         input class="name" type="text" placeholder="{{name}}"
       #new-game.button
         | New Game
 
-    script id="lobby-template"
+    script type="template" id="lobby-template"
       form id="name"
         input class="name" type="text" placeholder="{{name}}"
       | {{#players}}
@@ -33,70 +33,64 @@ html
       #start-game.button
         | Start Game
 
-    script id="mine-template"
-      | Mine ({{mine.length}})
+    script type="template" id="mine-template"
+      .deck.card
+        | Mine ({{mine.length}})
 
-    script id="players-template"
+    script type="template" id="discarded-template"
+      div class="{{empty}}"
+        | Deck ({{discarded.length}})
+
+    script type="template" id="info-template"
+      #shop-button.btn
+        | shop
+      #draws
+        img src='img/draw.png'
+        | {{player.draws}}
+      #plays
+        img src='img/play.png'
+        | {{player.plays}}
+      #points
+        img src='img/gem-icon.png' width="17" height="19"
+        | {{player.points}}
+      #end-turn-button.btn
+        | end turn
+      
+    script type="template" id="players-template"
       | {{#players}}
       .player class="{{turn}}"
         | {{name}}
       | {{/players}}
 
-    script id="points-template"
-      img src='img/gem-icon.png' width="17" height="19"
-      | {{points}}
-
-    script id="plays-template"
-      img src='img/play.png'
-      | {{plays}}
-
-    script id="draws-template"
-      img src='img/draw.png'
-      | {{draws}}
-
-    script id="hand-template"
+    script type="template" id="hand-template"
       | {{#hand}}
       .card.gem class="{{.}}" data-card="{{.}}"
         | &nbsp;
       | {{/hand}}
 
-    script id="log-template"
+    script type="template" id="log-template"
       | {{#log}}
       p {{.}}
       | {{/log}}
 
-    script id="chat-template"
+    script type="template" id="chat-template"
       form id="chat"
         input class="message" type="text" placeholder="Send a message.."
 
-    script id="discarded-template"
-      /| {{#discarded}}
-      /.card.gem class="{{.}}" data-card="{{.}}"
-        /| &nbsp;
-      /| {{/discarded}}
-      | Deck ({{discarded.length}})
+    script type="template" id="monster-template"
+      .card.gem class="{{monster}}" data-card="{{monster}}"
+        .progress
+          .bar style="width: {{hp}}%;"
+        /| {{hp}}
 
-    script id="played-template"
-      .card.gem class="{{played}}" data-card="{{played}}"
-        | {{hp}}
-
-    script id="shop-template"
+    script type="template" id="shop-template"
       | {{#shop}}
       .card.gem class="{{.}}" data-card="{{.}}"
         | &nbsp;
       | {{/shop}}
 
+    script type="template" id="game-template"
+      #info
+
   body
     #container
-      #info
-        #shop-button.info-button
-          | shop
-        #end-turn-button.info-button
-          | end turn
-      #game
-        #droppable-one
-          .empty-card
-            | &nbsp;
-        #droppable-two
-          .empty-card
-            | &nbsp;

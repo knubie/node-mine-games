@@ -1,20 +1,17 @@
 define [
-  'jquery'
   'underscore'
   'backbone'
-  'mustache'
   'socket.io'
-], ($, _, Backbone, Mustache, io) ->
+], (_, Backbone, io) ->
 
   app =
     url: "http://localhost:3000"
   socket = io.connect(app.url)
 
   Game: class extends Backbone.Model
-    initialize: (@cb) ->
+    initialize: ->
       unless @isNew() # Unless ID is null
-        @fetch
-          success: => socket.on @id, (game) => @set game
+        @fetch success: => socket.on @id, (game) => @set game
 
     idAttribute: '_id'
     name: 'game'
@@ -39,13 +36,16 @@ define [
         @save {}, success: => # Create new player from server
           sessionStorage.setItem 'player id', @id # Store new ID
           #TODO: refactor this and duplicate code below
-          socket.on @id, (player) => @set player
+          socket.on @id, (player) =>
+            @set player
+            console.log 'got player emit'
           @get('afterSave')() if @get('afterSave')
       else
-        @fetch
-          success: =>
-            socket.on @id, (player) => @set player
-            @get('afterSave')() if @get('afterSave')
+        @fetch success: =>
+          socket.on @id, (player) =>
+            console.log 'got player emit'
+            @set player
+          @get('afterSave')() if @get('afterSave')
 
     idAttribute: '_id'
     name: 'player'

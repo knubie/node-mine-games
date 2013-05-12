@@ -2,7 +2,8 @@ body {
   @import url(http://fonts.googleapis.com/css?family=Roboto+Condensed:400,700);
   font-size: 14px;
   font-family: Proxima Nova, sans-serif;
-  margin: 0; }
+  margin: 0;
+  -webkit-user-select: none; }
 
 input {
   box-sizing: border-box; }
@@ -33,7 +34,6 @@ input {
   -moz-box-sizing: border-box;
   padding-top: 50px;
   text-transform: uppercase;
-  -webkit-user-select: none;
   display: inline-block;
   margin: 5px 4px 5px 4px; }
 
@@ -43,16 +43,16 @@ input {
   background-color: #eeeeee;
   box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5);
   font-size: 18px; }
-  #info div {
+  #info #stats div {
     display: inline-block; }
-  #info img {
+  #info #stats img {
     margin-right: 4px;
     margin-bottom: -3px; }
-  #info #draws, #info #plays, #info #points {
-    margin: 0 0 0 22px; }
-  #info #end-turn-button {
+  #info #stats #draws, #info #stats #plays, #info #stats #points {
+    margin: 0 2px 0 11px; }
+  #info #stats #end-turn-button {
     float: right; }
-  #info .info-button {
+  #info #stats .info-button {
     border: 1px solid #cccccc;
     border-radius: 4px;
     padding: 4px;
@@ -61,19 +61,21 @@ input {
     -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
     background-image: linear-gradient(to bottom, #efefef, #dfdfdf);
     background-repeat: repeat-x; }
-  #info .info-button:hover {
+  #info #stats .info-button:hover {
     cursor: pointer; }
-  #info .disabled {
+  #info #stats .disabled {
     color: #cccccc; }
   #info #players {
     font-size: 16px;
     margin-top: 6px;
     text-align: center;
-    width: 100%; }
+    width: 100%;
+    height: 17px; }
     #info #players .player {
       max-width: 90px;
       white-space: nowrap;
-      overflow: hidden; }
+      overflow: hidden;
+      display: inline-block; }
     #info #players .player:nth-child(1) {
       float: left; }
     #info #players .player:nth-child(3) {
@@ -81,27 +83,27 @@ input {
     #info #players .player.false {
       color: #bbbbbb; }
 
-#game {
-  position: relative; }
-  #game #mine:hover {
-    cursor: pointer; }
-  #game #mine, #game #discarded {
-    background-image: url(../img/mine.png);
-    background-size: 177%;
-    background-position: center;
-    background-color: #333333;
-    color: #eeeeee;
-    border: 2px solid #333333;
-    display: inline-block; }
-  #game #mine, #game #hand {
-    position: relative; }
-  #game #hand {
-    white-space: nowrap;
-    overflow-x: scroll;
-    overflow-y: hidden;
-    height: 136px;
-    width: 100%;
-    -webkit-transition: -webkit-transform 0.5s; }
+#container #mine, #container #discarded {
+  display: inline-block;
+  vertical-align: top; }
+#container .deck:hover {
+  cursor: pointer; }
+#container .deck {
+  background-image: url(../img/mine.png);
+  background-size: 180%;
+  background-position: center;
+  background-color: #333333;
+  color: #eeeeee;
+  border: 2px solid #333333;
+  display: inline-block; }
+#container #hand {
+  white-space: nowrap;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  height: 136px;
+  width: 100%;
+  -webkit-transition: -webkit-transform 0.5s;
+  -webkit-overflow-scrolling: touch; }
 
 #chat-container {
   position: absolute;
@@ -191,29 +193,27 @@ button:active {
 .ui-draggable-dragging {
   z-index: 99; }
 
-#droppable-one, #droppable-two {
-  display: inline-block; }
-  #droppable-one #discarded, #droppable-one #played, #droppable-two #discarded, #droppable-two #played {
-    position: absolute;
-    top: 0;
-    left: 104px; }
-    #droppable-one #discarded .card, #droppable-one #played .card, #droppable-two #discarded .card, #droppable-two #played .card {
-      margin-right: -99px;
-      box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.5); }
-  #droppable-one #played, #droppable-two #played {
-    left: 0; }
-  #droppable-one .empty-card, #droppable-two .empty-card {
-    border: 1px dashed #eeeeee;
-    border-radius: 5px;
-    width: 95px;
-    height: 126px;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    padding-top: 50px;
-    -webkit-user-select: none;
+.goblin {
+  text-align: center; }
+  .goblin .progress {
     display: inline-block;
-    margin: 5px 4px 5px 4px;
-    position: relative; }
+    height: 8px;
+    width: 80%; }
+
+.empty-card {
+  border: 1px dashed #eeeeee;
+  border-radius: 5px;
+  width: 95px;
+  height: 126px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  padding-top: 50px;
+  display: inline-block;
+  margin: 5px 4px 5px 4px;
+  position: relative;
+  text-transform: uppercase;
+  text-align: center;
+  color: white; }
 
 #shop {
   width: 110px;

@@ -1,10 +1,12 @@
 require.config
   baseUrl: 'js/vendor'
   shim:
+    'zepto':
+      exports: '$'
     'socket.io':
       exports: 'io'
     'backbone':
-      deps: ['underscore', 'jquery']
+      deps: ['underscore', 'zepto']
       exports: 'Backbone'
     'underscore':
       exports: '_'
@@ -16,7 +18,7 @@ require.config
 
 define (require) ->
 
-  $ = require 'jquery'
+  $ = require 'zepto'
   _ = require 'underscore'
   Backbone = require 'backbone'
   io = require 'socket.io'
@@ -59,22 +61,19 @@ define (require) ->
             trigger: true
 
       showGame: (id) ->
-        unless app.game and app.game.id is id
-          app.game = new models.Game
-            _id: id
+        app.game = new models.Game
+          _id: id
 
-        if app.player
-          app.game.addPlayer app.player # Emits updated game model
-        else
-          app.player = new models.Player
-            afterSave: ->
-              app.game.addPlayer app.player # Emits updated game model
+        app.player = new models.Player
+          afterSave: ->
+            app.game.addPlayer app.player
+            app.view.remove() if app.view?
+            app.view = new views.Game
+              model: app.game
+              player: app.player
+            app.view.render()
 
-        app.view.remove() if app.view?
-        app.view = new views.Game
-          model: app.game
-          player: app.player
-        app.view.render()
+
 
     app.routes = new Routes
     Backbone.history.start()

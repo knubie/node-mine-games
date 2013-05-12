@@ -7,55 +7,57 @@
     <meta content="" name="description" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport" />
     <link href="css/lib/reset.css" rel="stylesheet" />
-    <link href="css/vendor/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/vendor/bootstrap.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <script data-main="js/main" src="js/vendor/require.js"></script>
-    <script id="home-template">
+    <script id="home-template" type="template">
       <form id="name">
         <input class="name" placeholder="{{name}}" type="text" />
       </form>
       <div class="button" id="new-game">New Game</div>
     </script>
-    <script id="lobby-template">
+    <script id="lobby-template" type="template">
       <form id="name">
         <input class="name" placeholder="{{name}}" type="text" />
       </form>{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}<div class="button" id="start-game">Start Game</div>
     </script>
-    <script id="mine-template">Mine ({{mine.length}})</script>
-    <script id="players-template">{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}</script>
-    <script id="points-template">
-      <img height="19" src="img/gem-icon.png" width="17" />{{points}}</script>
-    <script id="plays-template">
-      <img src="img/play.png" />{{plays}}</script>
-    <script id="draws-template">
-      <img src="img/draw.png" />{{draws}}</script>
-    <script id="hand-template">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/hand}}</script>
-    <script id="log-template">{{#log}}<p>{{.}}</p>{{/log}}</script>
-    <script id="chat-template">
+    <script id="mine-template" type="template">
+      <div class="deck card">Mine ({{mine.length}})</div>
+    </script>
+    <script id="discarded-template" type="template">
+      <div class="{{empty}}">Deck ({{discarded.length}})</div>
+    </script>
+    <script id="info-template" type="template">
+      <div class="btn" id="shop-button">shop</div>
+      <div id="draws">
+        <img src="img/draw.png" />{{player.draws}}</div>
+      <div id="plays">
+        <img src="img/play.png" />{{player.plays}}</div>
+      <div id="points">
+        <img height="19" src="img/gem-icon.png" width="17" />{{player.points}}</div>
+      <div class="btn" id="end-turn-button">end turn</div>
+    </script>
+    <script id="players-template" type="template">{{#players}}<div class="player {{turn}}">{{name}}</div>{{/players}}</script>
+    <script id="hand-template" type="template">{{#hand}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/hand}}</script>
+    <script id="log-template" type="template">{{#log}}<p>{{.}}</p>{{/log}}</script>
+    <script id="chat-template" type="template">
       <form id="chat">
         <input class="message" placeholder="Send a message.." type="text" />
       </form>
     </script>
-    <script id="discarded-template">Deck ({{discarded.length}})</script>
-    <script id="played-template">
-      <div class="card gem {{played}}" data-card="{{played}}">{{hp}}</div>
+    <script id="monster-template" type="template">
+      <div class="card gem {{monster}}" data-card="{{monster}}">
+        <div class="progress">
+          <div class="bar" style="width: {{hp}}%;"></div>
+        </div>
+      </div>
     </script>
-    <script id="shop-template">{{#shop}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/shop}}</script>
+    <script id="shop-template" type="template">{{#shop}}<div class="card gem {{.}}" data-card="{{.}}">&nbsp;</div>{{/shop}}</script>
+    <script id="game-template" type="template">
+      <div id="info"></div>
+    </script>
   </head>
   <body>
-    <div id="container">
-      <div id="info">
-        <div class="info-button" id="shop-button">shop</div>
-        <div class="info-button" id="end-turn-button">end turn</div>
-      </div>
-      <div id="game">
-        <div id="droppable-one">
-          <div class="empty-card">&nbsp;</div>
-        </div>
-        <div id="droppable-two">
-          <div class="empty-card">&nbsp;</div>
-        </div>
-      </div>
-    </div>
+    <div id="container"></div>
   </body>
 </html>

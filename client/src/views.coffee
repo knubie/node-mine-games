@@ -1,5 +1,5 @@
 define [
-  'jquery'
+  'zepto'
   'underscore'
   'backbone'
   'mustache'
@@ -39,16 +39,24 @@ define [
       @game = @options.game
       @player = @options.player
       @listenTo @game, 'change:mine', @render
-      @$el.addClass 'card'
-      @$el.insertBefore '#game > #droppable-one'
-      #$('#game').prepend @$el
+      @listenTo @game, 'change:monster', @render
+      @listenTo @game, 'change:monsterHP', @render
 
     id: 'mine'
-    template: $('#mine-template').html()
+    mineTemplate: $('#mine-template').html()
+    monsterTemplate: $('#monster-template').html()
 
     render: ->
-      @$el.html Mustache.render @template,
-        mine: @game.get('mine')
+      if @game.get('monster')
+        @$el.html Mustache.render @monsterTemplate,
+          monster: @game.get('monster')
+          hp: =>
+            @game.get('monsterHP')/20*100 #TODO: get actual total hp.
+      else
+        @$el.html Mustache.render @mineTemplate,
+          mine: @game.get('mine')
+
+      return @$el
 
     events:
       'click': 'draw'
@@ -61,33 +69,70 @@ define [
       @game = @options.game
       @player = @options.player
       @listenTo @player, 'change:hand', @render
-      @$el.insertAfter '#game > #droppable-two'
 
     id: 'hand'
     template: $('#hand-template').html()
     render: ->
+      console.log 'hand changed'
+      console.log @player.get('hand')
       @$el.html Mustache.render @template,
         hand: @player.get('hand')
+      return @$el
 
     events:
-      'click .card': 'play'
+      'tap,click .card': 'play'
 
     play: (e) ->
       @player.play $(e.currentTarget).attr('data-card'), @game
+
+  class Info extends Backbone.View
+    initialize: ->
+      console.log 'init info'
+      @player = @options.player
+      @game = @options.game
+      @listenTo @player, 'change', @render
+      $('#info').prepend @$el
+
+    id: 'stats'
+    template: $('#info-template').html()
+    render: ->
+      @$el.html Mustache.render @template,
+        player: @player.attributes
+
+  class Players extends Backbone.View
+    initialize: ->
+      console.log 'init players list'
+      @listenTo @model, 'change:players', @render
+      $('#info').append @$el
+      #@$el.insertAfter '#info'
+
+    id: 'players'
+
+    template: $('#players-template').html()
+    render: ->
+      # Don't render if game.players isn't populated.
+      unless typeof @model.get('players')[0] is 'string'
+        @$el.html Mustache.render @template,
+          players: @model.get('players')
 
   class Discarded extends Backbone.View
     initialize: ->
       @player = @options.player
       @game = @options.game
       @listenTo @player, 'change:discarded', @render
-      @$el.addClass 'card'
-      $('#droppable-one').append @$el
 
     id: 'discarded'
     template: $('#discarded-template').html()
     render: ->
+      console.log @player
+      if @player.get('discarded').length < 1
+        empty = 'empty-card'
+      else
+        empty = 'deck card'
       @$el.html Mustache.render @template,
         discarded: @player.get 'discarded'
+        empty: empty
+      return @$el
 
     events:
       'click': 'draw'
@@ -99,7 +144,7 @@ define [
     initialize: ->
       @listenTo @model, 'change:monster', @render
       @listenTo @model, 'change:monsterHP', @render
-      $('#droppable-two').append @$el
+      #$('#droppable-two').append @$el
 
     id: 'played'
     template: $('#played-template').html()
@@ -108,59 +153,11 @@ define [
         $('#droppable-two').append @$el
         @$el.html Mustache.render @template,
           played: @model.get('monster')
-          hp: @model.get('monsterHP')
+          hp: =>
+            @model.get('monsterHP')/20*100
       else
         $('#played').remove()
-
-  class Points extends Backbone.View
-    initialize: ->
-      @listenTo @model, 'change:points', @render
-      @$el.insertAfter '#shop-button'
-
-    id: 'points'
-
-    template: $('#points-template').html()
-    render: ->
-      @$el.html Mustache.render @template,
-        points: @model.get 'points'
-
-  class Plays extends Backbone.View
-    initialize: ->
-      @listenTo @model, 'change:plays', @render
-      @$el.insertAfter '#shop-button'
-
-    id: 'plays'
-
-    template: $('#plays-template').html()
-    render: ->
-      @$el.html Mustache.render @template,
-        plays: @model.get 'plays'
-
-  class Draws extends Backbone.View
-    initialize: ->
-      @listenTo @model, 'change:draws', @render
-      #$('#info').prepend @$el
-      @$el.insertAfter '#shop-button'
-
-    id: 'draws'
-
-    template: $('#draws-template').html()
-    render: ->
-      @$el.html Mustache.render @template,
-        draws: @model.get 'draws'
-
-  class Players extends Backbone.View
-    initialize: ->
-      @listenTo @model, 'change:players', @render
-      $('#info').append @$el
-
-    id: 'players'
-
-    template: $('#players-template').html()
-    render: ->
-      unless typeof @model.get('players')[0] is 'string'
-        @$el.html Mustache.render @template,
-          players: @model.get('players')
+      return @$el
 
   class Shop extends Backbone.View
     initialize: ->
@@ -185,7 +182,8 @@ define [
     initialize: ->
       @player = @options.player
       @listenTo @model, 'change:log', @render
-      @$el.insertAfter '#game'
+      $('#container').append @$el
+      #@$el.insertAfter '#game'
 
     id: 'log'
     template: $('#log-template').html()
@@ -251,47 +249,44 @@ define [
       @listenTo @model, 'change:started', @render
       @listenTo @player, 'change:turn', =>
         alert "It's your turn." if @player.turn
-      @$el = $('#container')
+      $('#container').append @$el
 
     template: $('#game-template').html()
+    id: 'game'
 
     render: ->
       #TODO Prevent showing lobby before game is fetched.
       if @model.get 'started'
         @lobby.remove() if @lobby
 
+        console.log @player
+        @$el.html @template
+
         #Game board
         @mine = new Mine
           game: @model
           player: @player
-        @mine.render()
-
-        @hand = new Hand
-          game: @model
-          player: @player
-        @hand.render()
+        @$el.append @mine.render()
 
         @discarded = new Discarded
           game: @model
           player: @player
-        @discarded.render()
+        @$el.append @discarded.render()
+
+        @hand = new Hand
+          game: @model
+          player: @player
+        @$el.append @hand.render()
 
         @played = new Played
           model: @model
-        @played.render()
+        @$el.append @played.render()
 
         #Info bar
-        @points = new Points
-          model: @player
-        @points.render()
-
-        @plays = new Plays
-          model: @player
-        @plays.render()
-
-        @draws = new Draws
-          model: @player
-        @draws.render()
+        @info = new Info
+          game: @model
+          player: @player
+        @info.render()
 
         @players = new Players
           model: @model
@@ -302,6 +297,7 @@ define [
           player: @player
         @shop.render()
 
+        #Log
         @log = new Log
           model: @model
           player: @player

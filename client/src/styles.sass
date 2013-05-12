@@ -3,6 +3,7 @@ body
   font-size: 14px
   font-family: Proxima Nova, sans-serif
   margin: 0
+  -webkit-user-select: none
 input
   box-sizing: border-box
 #home
@@ -31,7 +32,6 @@ input
   -moz-box-sizing: border-box
   padding-top: 50px
   text-transform: uppercase
-  -webkit-user-select: none
   display: inline-block
   margin: 5px 4px 5px 4px
 
@@ -41,37 +41,40 @@ input
   background-color: #eee
   box-shadow: 1px 2px 6px rgba(0,0,0, 0.5)
   font-size: 18px
-  div
-    display: inline-block
-  img
-    margin-right: 4px
-    margin-bottom: -3px
-  #draws, #plays, #points
-    margin: 0 0 0 22px
-  #end-turn-button
-    float: right
-  .info-button
-    border: 1px solid #ccc
-    border-radius: 4px
-    padding: 4px
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25)
-    border-bottom-color: #b3b3b3
-    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05)
-    background-image: linear-gradient(to bottom, #efefef, #dfdfdf)
-    background-repeat: repeat-x
-  .info-button:hover
-    cursor: pointer
-  .disabled
-    color: #ccc
+  #stats
+    div
+      display: inline-block
+    img
+      margin-right: 4px
+      margin-bottom: -3px
+    #draws, #plays, #points
+      margin: 0 2px 0 11px
+    #end-turn-button
+      float: right
+    .info-button
+      border: 1px solid #ccc
+      border-radius: 4px
+      padding: 4px
+      border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25)
+      border-bottom-color: #b3b3b3
+      -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05)
+      background-image: linear-gradient(to bottom, #efefef, #dfdfdf)
+      background-repeat: repeat-x
+    .info-button:hover
+      cursor: pointer
+    .disabled
+      color: #ccc
   #players
     font-size: 16px
     margin-top: 6px
     text-align: center
     width: 100%
+    height: 17px
     .player
       max-width: 90px
       white-space: nowrap
       overflow: hidden
+      display: inline-block
     .player:nth-child(1)
       float: left
     .player:nth-child(3)
@@ -79,20 +82,22 @@ input
     .player.false
       color: #bbb
 
-#game
-  position: relative
-  #mine:hover
-    cursor: pointer
+#container
+  //position: relative
+    display: inline-block
   #mine, #discarded
+    display: inline-block
+    vertical-align: top
+  .deck:hover
+    cursor: pointer
+  .deck
     background-image: url(../img/mine.png)
-    background-size: 177%
+    background-size: 180%
     background-position: center
     background-color: #333
     color: #eee
     border: 2px solid #333
     display: inline-block
-  #mine, #hand
-    position: relative
   #hand
     white-space: nowrap
     overflow-x: scroll
@@ -100,6 +105,7 @@ input
     height: 136px
     width: 100%
     -webkit-transition: -webkit-transform 0.5s
+    -webkit-overflow-scrolling: touch
 
 #chat-container
   position: absolute
@@ -150,7 +156,6 @@ input
 .card:active
   -webkit-transform: translate(1px, 1px)
 
-
 .button
   display: inline-block
   background-color: #5BBAE9
@@ -181,30 +186,27 @@ button:active
 .ui-draggable-dragging
   z-index: 99
 
-#droppable-one, #droppable-two
-  display: inline-block
-  #discarded, #played
-    position: absolute
-    top: 0
-    left: 104px
-    .card
-      margin-right: -99px
-      //box-shadow: none
-      box-shadow: 1px 2px 6px rgba(0,0,0, 0.5)
-  #played
-    left: 0
-  .empty-card
-    border: 1px dashed #eee
-    border-radius: 5px
-    width: 95px
-    height: 126px
-    box-sizing: border-box
-    -moz-box-sizing: border-box
-    padding-top: 50px
-    -webkit-user-select: none
+.goblin
+  text-align: center
+  .progress
     display: inline-block
-    margin: 5px 4px 5px 4px
-    position: relative
+    height: 8px
+    width: 80%
+
+.empty-card
+  border: 1px dashed #eee
+  border-radius: 5px
+  width: 95px
+  height: 126px
+  box-sizing: border-box
+  -moz-box-sizing: border-box
+  padding-top: 50px
+  display: inline-block
+  margin: 5px 4px 5px 4px
+  position: relative
+  text-transform: uppercase
+  text-align: center
+  color: #FFF
 
 #shop
   width: 110px

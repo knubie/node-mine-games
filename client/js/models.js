@@ -3,7 +3,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['jquery', 'underscore', 'backbone', 'mustache', 'socket.io'], function($, _, Backbone, Mustache, io) {
+  define(['underscore', 'backbone', 'socket.io'], function(_, Backbone, io) {
     var app, socket;
     app = {
       url: "http://localhost:3000"
@@ -18,9 +18,8 @@
           return _Class.__super__.constructor.apply(this, arguments);
         }
 
-        _Class.prototype.initialize = function(cb) {
+        _Class.prototype.initialize = function() {
           var _this = this;
-          this.cb = cb;
           if (!this.isNew()) {
             return this.fetch({
               success: function() {
@@ -76,7 +75,8 @@
               success: function() {
                 sessionStorage.setItem('player id', _this.id);
                 socket.on(_this.id, function(player) {
-                  return _this.set(player);
+                  _this.set(player);
+                  return console.log('got player emit');
                 });
                 if (_this.get('afterSave')) {
                   return _this.get('afterSave')();
@@ -87,6 +87,7 @@
             return this.fetch({
               success: function() {
                 socket.on(_this.id, function(player) {
+                  console.log('got player emit');
                   return _this.set(player);
                 });
                 if (_this.get('afterSave')) {
