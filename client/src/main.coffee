@@ -13,7 +13,7 @@ require.config
 
   paths:
     'models': '../models'
-    'socket.io': 'http://localhost:3000/socket.io/socket.io'
+    'socket.io': 'http://mine-games.herokuapp.com/socket.io/socket.io.js'
     'views': '../views'
 
 define (require) ->
@@ -27,7 +27,7 @@ define (require) ->
 
   $ ->
     app =
-      url: "http://localhost:3000"
+      url: "http://mine-games.herokuapp.com"
     socket = io.connect(app.url)
 
     Backbone.sync = (method, model, options) ->

@@ -6,7 +6,7 @@
   define(['underscore', 'backbone', 'socket.io'], function(_, Backbone, io) {
     var app, socket;
     app = {
-      url: "http://localhost:3000"
+      url: "http://mine-games.herokuapp.com"
     };
     socket = io.connect(app.url);
     return {

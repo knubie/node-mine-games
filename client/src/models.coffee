@@ -5,7 +5,7 @@ define [
 ], (_, Backbone, io) ->
 
   app =
-    url: "http://localhost:3000"
+    url: "http://mine-games.herokuapp.com"
   socket = io.connect(app.url)
 
   Game: class extends Backbone.Model
