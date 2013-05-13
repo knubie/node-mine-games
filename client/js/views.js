@@ -128,7 +128,7 @@
       };
 
       Hand.prototype.events = {
-        'tap,click .card': 'play'
+        'click .card': 'play'
       };
 
       Hand.prototype.play = function(e) {

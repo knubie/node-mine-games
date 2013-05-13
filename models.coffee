@@ -101,10 +101,9 @@ exports.playerSchema.method
       axe: => attack(10)
 
     if gem[card] or @plays > 0 # If card is a gem
-      console.log "discarding, points: #{@points}"
       @discard card
+      game.log.push "#{@name} played a #{card}."
       play[card]()
       @plays-- if not gem[card]
-      game.log.push "#{@name} played a #{card}."
 
     @save -> game.save -> cb()

@@ -80,7 +80,7 @@ define [
       return @$el
 
     events:
-      'tap,click .card': 'play'
+      'click .card': 'play'
 
     play: (e) ->
       @player.play $(e.currentTarget).attr('data-card'), @game

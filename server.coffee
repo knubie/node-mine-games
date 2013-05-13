@@ -4,9 +4,6 @@ _ = require 'underscore'
 sugar = require 'sugar'
 express = require('express')
 
-#TODO: goblin stealing doesn't show up on client
-#TODO: goblin defeat doesn't show up on client
-#TODO: fix goblin defeat log message
 #TODO: add mana cards and spells
 #TODO: add a game ref to player model
 
