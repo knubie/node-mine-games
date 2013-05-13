@@ -227,7 +227,7 @@ io.sockets.on 'connection', (socket) ->
           else
             socket.emit player.id, player
 
-mongoose.connect process.env.MONGOLAB_URI || 'mongodb://localhost/test'
+mongoose.connect 'mongodb://heroku_app15587557:6e39i3ei792jljkpnk5rbul97a@ds061777.mongolab.com:61777/heroku_app15587557'
 db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once 'open', ->
