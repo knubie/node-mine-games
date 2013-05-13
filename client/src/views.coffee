@@ -3,8 +3,9 @@ define [
   'underscore'
   'backbone'
   'mustache'
+  'appscroll'
   'models'
-], ($, _, Backbone, Mustache, models) ->
+], ($, _, Backbone, Mustache, AppScroll, models) ->
 
   class Lobby extends Backbone.View
     initialize: ->
@@ -14,6 +15,9 @@ define [
       @listenTo @game, 'change:players', @render
       @listenTo @player, 'change:name', @render
       $('#container').append @$el
+      scroller = new AppScroll
+        toolbar: $('#info')[0]
+        scroller: @el
 
     id: 'lobby'
 
@@ -250,6 +254,7 @@ define [
       @listenTo @player, 'change:turn', =>
         alert "It's your turn." if @player.turn
       $('#container').append @$el
+
 
     template: $('#game-template').html()
     id: 'game'

@@ -23,6 +23,7 @@ define (require) ->
   Backbone = require 'backbone'
   io = require 'socket.io'
   Fastclick = require 'fastclick'
+  AppScroll = require 'appscroll'
   models = require 'models'
   views = require 'views'
 
