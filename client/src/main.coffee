@@ -22,10 +22,13 @@ define (require) ->
   _ = require 'underscore'
   Backbone = require 'backbone'
   io = require 'socket.io'
+  Fastclick = require 'fastclick'
   models = require 'models'
   views = require 'views'
 
   $ ->
+    FastClick.attach document.body
+
     app =
       url: "http://localhost:3000"
     socket = io.connect(app.url)
