@@ -22,20 +22,19 @@ io.sockets.on 'connection', (socket) ->
     game = new Game
     game.started = false
     #game.deal()
-    game.save (err) ->
-      callback game
+    game.save -> callback game
 
   socket.on 'read game', (id, callback) ->
-    Game.findById id, (err, game) ->
-      callback game
+    Game.findById id, (err, game) -> callback game
 
   socket.on 'start game', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
       game.started = true
-      position = Number.random game.players.length - 1
-      Player.findById game.players[position], (err, player) ->
+      startingPosition = Number.random game.players.length - 1
+      Player.findById game.players[startingPosition], (err, player) ->
         player.turn = true
         game.deal()
+        #TODO: refactor this. write tests
         player.save -> game.populate 'players', (err, game) ->
           socket.emit player._id, player
           game.save ->
@@ -46,6 +45,7 @@ io.sockets.on 'connection', (socket) ->
     # Join game being called before create player callback is fired.
     Game.findById req.game._id, (err, game) ->
       Player.findById req.player._id, (err, player) ->
+        # Are there less than 5 players, and is the player not in the game?
         if game.players.length <= 4 and game.players.indexOf(player._id) is -1
           game.players.push player
           game.log.push "#{player.name} joined the game."
@@ -72,12 +72,10 @@ io.sockets.on 'connection', (socket) ->
       turn: false
       points: 0
       draws: 1
-    player.save (err) ->
-      callback player
+    player.save -> callback player
 
   socket.on 'read player', (id, callback) ->
-    Player.findById id, (err, player) ->
-      callback player
+    Player.findById id, (err, player) -> callback player
 
   socket.on 'draw', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
@@ -195,15 +193,14 @@ io.sockets.on 'connection', (socket) ->
           sword: 1
           axe: 3
           pickaxe: 2
-        if player.turn
-          if player.points >= shop[req.card]
-            player.points -= shop[req.card]
-            player.hand.push req.card
-            game.log.push "#{player.name} bought a #{req.card}."
-            game.save -> player.save ->
-              socket.emit game._id, game
-              socket.broadcast.emit game._id, game
-              socket.emit player._id, player
+        if player.turn and player.points >= shop[req.card]
+          player.points -= shop[req.card]
+          player.hand.push req.card
+          game.log.push "#{player.name} bought a #{req.card}."
+          game.save -> player.save ->
+            socket.emit game._id, game
+            socket.broadcast.emit game._id, game
+            socket.emit player._id, player
 
   socket.on 'send message', (req, callback) ->
     Game.findById req.game._id, (err, game) ->
