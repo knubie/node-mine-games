@@ -168,23 +168,24 @@ io.sockets.on 'connection', (socket) ->
           if draws > 0
             player.drawFrom player.discarded for [1..draws]
           # Save and emit change to client.
-          player.save -> socket.emit player._id, player
-          # Move turn to next player
-          position = game.players.indexOf player.id
-          position++
-          if position > game.players.length - 1
-            position = 0
-          # Find next player and start their turn.
-          Player.findById game.players[position], (err, player) ->
-            player.turn = true
-            if game.monster
-              game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
-              game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
-            player.save ->
-              socket.broadcast.emit player._id, player
-              game.populate 'players', (err, game) -> game.save ->
-                socket.broadcast.emit game._id, game
-                socket.emit game._id, game
+          player.save ->
+            socket.emit player._id, player
+            # Move turn to next player
+            position = game.players.indexOf player.id
+            position++
+            if position > game.players.length - 1
+              position = 0
+            # Find next player and start their turn.
+            Player.findById game.players[position], (err, player) ->
+              player.turn = true
+              if game.monster
+                game.monsterLoot.push player.hand.splice(Number.random(player.hand.length-1), 1)
+                game.log.push "The #{game.monster} stole a card from #{player.name}'s hand."
+              player.save ->
+                socket.broadcast.emit player._id, player
+                game.populate 'players', (err, game) -> game.save ->
+                  socket.broadcast.emit game._id, game
+                  socket.emit game._id, game
 
   socket.on 'buy', (req, callback) ->
     Game.findById req.game._id, (err, game) ->

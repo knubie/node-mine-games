@@ -15,9 +15,9 @@ define [
       @listenTo @game, 'change:players', @render
       @listenTo @player, 'change:name', @render
       $('#container').append @$el
-      scroller = new AppScroll
-        toolbar: $('#info')[0]
-        scroller: @el
+      #scroller = new AppScroll
+        #toolbar: $('#info')[0]
+        #scroller: @el
 
     id: 'lobby'
 
@@ -254,6 +254,7 @@ define [
       @listenTo @player, 'change:turn', =>
         alert "It's your turn." if @player.turn
       $('#container').append @$el
+      @shopIsOpen = false
 
 
     template: $('#game-template').html()
@@ -327,10 +328,13 @@ define [
       @player.endTurn @model
 
     toggleShop: ->
-      if $('#container').css('-webkit-transform') is 'matrix(1, 0, 0, 1, 110, 0)'
+      console.log 'toggle shop'
+      if @shopIsOpen
+        @shopIsOpen = false
         $('#container').css
           '-webkit-transform': 'translateX(0)'
       else
+        @shopIsOpen = true
         $('#container').css
           '-webkit-transform': 'translateX(110px)'
 

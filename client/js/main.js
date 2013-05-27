@@ -28,15 +28,18 @@
   });
 
   define(function(require) {
-    var $, Backbone, io, models, views, _;
+    var $, AppScroll, Backbone, Fastclick, io, models, views, _;
     $ = require('zepto');
     _ = require('underscore');
     Backbone = require('backbone');
     io = require('socket.io');
+    Fastclick = require('fastclick');
+    AppScroll = require('appscroll');
     models = require('models');
     views = require('views');
     return $(function() {
       var Routes, app, socket;
+      FastClick.attach(document.body);
       app = {
         url: "http://localhost:3000"
       };

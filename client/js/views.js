@@ -3,7 +3,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['zepto', 'underscore', 'backbone', 'mustache', 'models'], function($, _, Backbone, Mustache, models) {
+  define(['zepto', 'underscore', 'backbone', 'mustache', 'appscroll', 'models'], function($, _, Backbone, Mustache, AppScroll, models) {
     var Chat, Discarded, Hand, Info, Lobby, Log, Mine, Played, Players, Shop;
     Lobby = (function(_super) {
 
@@ -437,7 +437,8 @@
               return alert("It's your turn.");
             }
           });
-          return $('#container').append(this.$el);
+          $('#container').append(this.$el);
+          return this.shopIsOpen = false;
         };
 
         _Class.prototype.template = $('#game-template').html();
@@ -516,11 +517,14 @@
         };
 
         _Class.prototype.toggleShop = function() {
-          if ($('#container').css('-webkit-transform') === 'matrix(1, 0, 0, 1, 110, 0)') {
+          console.log('toggle shop');
+          if (this.shopIsOpen) {
+            this.shopIsOpen = false;
             return $('#container').css({
               '-webkit-transform': 'translateX(0)'
             });
           } else {
+            this.shopIsOpen = true;
             return $('#container').css({
               '-webkit-transform': 'translateX(110px)'
             });
