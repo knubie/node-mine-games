@@ -77,7 +77,5 @@ define (require) ->
               player: app.player
             app.view.render()
 
-
-
     app.routes = new Routes
     Backbone.history.start()
