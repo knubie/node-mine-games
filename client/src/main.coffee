@@ -17,7 +17,6 @@ require.config
     'views': '../views'
 
 define (require) ->
-
   $ = require 'zepto'
   _ = require 'underscore'
   Backbone = require 'backbone'
